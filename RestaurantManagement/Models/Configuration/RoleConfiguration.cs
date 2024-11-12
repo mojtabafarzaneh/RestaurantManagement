@@ -4,27 +4,28 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace RestaurantManagement.Models.Configuration;
 
-public class RoleConfiguration: IEntityTypeConfiguration<IdentityRole>
+public class RoleConfiguration: IEntityTypeConfiguration<RestaurantRoles>
 {
-    public void Configure(EntityTypeBuilder<IdentityRole> builder)
+    public void Configure(EntityTypeBuilder<RestaurantRoles> modelBuilder)
     {
-        builder.HasData(
-            new IdentityRole
+        modelBuilder.HasData(
+            new RestaurantRoles
             {
                 Name = "Admin",
                 NormalizedName = "ADMIN"
             },
-            new IdentityRole
+            new RestaurantRoles
             {
                 Name = "Customer",
                 NormalizedName = "CUSTOMER"
+                
             },
-            new IdentityRole
+            new RestaurantRoles
             {
                 Name = "Chef",
                 NormalizedName = "CHEF"
             },
-            new IdentityRole
+            new RestaurantRoles
             {
                 Name = "Manager",
                 NormalizedName = "MANAGER"

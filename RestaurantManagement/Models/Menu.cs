@@ -17,12 +17,18 @@ public class Menu
     public decimal Price { get; set; }
     [Required]
     public CategoryType  Category { get; set; }
-    [Required]
-    public TimeSpan? EstimatedPrepTime { get; set; }
+
+    [Required] 
+    public int EstimatedPrepTime { get; set; }
+    
     [Required]
     public int? QuantityAvailable { get; set; }
     [Required]
     public bool Available { get; set; }
+    
+    //RelationShips
+    public ICollection<OrderItem> OrderItems { get; set; }
+    public ICollection<CartItem> CartItems { get; set; }
 
 
     public enum CategoryType

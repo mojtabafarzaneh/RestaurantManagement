@@ -12,8 +12,8 @@ using RestaurantManagement.Data;
 namespace RestaurantManagement.Migrations
 {
     [DbContext(typeof(ApplicationDBContex))]
-    [Migration("20241109155701_init")]
-    partial class init
+    [Migration("20241112181750_First-Full-Implementation")]
+    partial class FirstFullImplementation
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -128,6 +128,53 @@ namespace RestaurantManagement.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("RestaurantManagement.Models.Cart", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId")
+                        .IsUnique();
+
+                    b.ToTable("Carts");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.CartItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CartId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MenuId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("MenuId");
+
+                    b.ToTable("CartItems");
+                });
+
             modelBuilder.Entity("RestaurantManagement.Models.Customer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -221,9 +268,8 @@ namespace RestaurantManagement.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<TimeSpan?>("EstimatedPrepTime")
-                        .IsRequired()
-                        .HasColumnType("time");
+                    b.Property<int>("EstimatedPrepTime")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -239,6 +285,70 @@ namespace RestaurantManagement.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Menus");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("EstimatedReadyTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StatusType")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TableNumber")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TypeOfOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.OrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MenuId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MenuId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderItems");
                 });
 
             modelBuilder.Entity("RestaurantManagement.Models.RestaurantRoles", b =>
@@ -271,10 +381,54 @@ namespace RestaurantManagement.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("33bbe8c2-7adb-405a-a1f8-708da6c68dc0"),
+                            Id = new Guid("e722f22f-288e-4e7b-9391-fca88e546a15"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
+                        },
+                        new
+                        {
+                            Id = new Guid("fa398b78-beec-4072-a25c-59ac343bc9bb"),
+                            Name = "Customer",
+                            NormalizedName = "CUSTOMER"
+                        },
+                        new
+                        {
+                            Id = new Guid("b4129831-dcb5-4968-a038-f1e37c4422c6"),
+                            Name = "Chef",
+                            NormalizedName = "CHEF"
+                        },
+                        new
+                        {
+                            Id = new Guid("77099540-3d2e-4523-9178-cf7bb0decc40"),
+                            Name = "Manager",
+                            NormalizedName = "MANAGER"
                         });
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.Ticket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsFlagged")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TicketStatus")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.ToTable("Tickets");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -325,6 +479,105 @@ namespace RestaurantManagement.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.Cart", b =>
+                {
+                    b.HasOne("RestaurantManagement.Models.Customer", "Customer")
+                        .WithOne("Cart")
+                        .HasForeignKey("RestaurantManagement.Models.Cart", "CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.CartItem", b =>
+                {
+                    b.HasOne("RestaurantManagement.Models.Cart", "Cart")
+                        .WithMany("CartItems")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantManagement.Models.Menu", "Menu")
+                        .WithMany("CartItems")
+                        .HasForeignKey("MenuId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("Menu");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.Order", b =>
+                {
+                    b.HasOne("RestaurantManagement.Models.Customer", "Customer")
+                        .WithMany("Orders")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.OrderItem", b =>
+                {
+                    b.HasOne("RestaurantManagement.Models.Menu", "Menus")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("MenuId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantManagement.Models.Order", "Orders")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Menus");
+
+                    b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.Ticket", b =>
+                {
+                    b.HasOne("RestaurantManagement.Models.Order", "Order")
+                        .WithOne("Ticket")
+                        .HasForeignKey("RestaurantManagement.Models.Ticket", "OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.Cart", b =>
+                {
+                    b.Navigation("CartItems");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.Customer", b =>
+                {
+                    b.Navigation("Cart")
+                        .IsRequired();
+
+                    b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.Menu", b =>
+                {
+                    b.Navigation("CartItems");
+
+                    b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("RestaurantManagement.Models.Order", b =>
+                {
+                    b.Navigation("OrderItems");
+
+                    b.Navigation("Ticket")
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace RestaurantManagement.Models.Configuration;
 
@@ -15,6 +16,11 @@ public class OrderItemConfiguration:IEntityTypeConfiguration<OrderItem>
         builder
             .Property(oi => oi.Price)
             .HasColumnType("decimal(18,2)");
+        
+        builder
+            .Property<Guid>("Id")
+            .HasColumnType("uniqueidentifier")
+            .HasValueGenerator<GuidValueGenerator>();
         
     }
 }

@@ -5,11 +5,15 @@ namespace RestaurantManagement.Models;
 
 public class Cart
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Cart()
+    {
+        Id = Guid.NewGuid();
+    }
+    public Guid Id { get; set; }
     [Required]
-    public DateTime CreatedOn { get; set; } = DateTime.Now;
+    public DateTime CreatedOn { get; set; }
     [Required]
-    public DateTime UpdatedOn { get; set; } = DateTime.Now;
+    public DateTime UpdatedOn { get; set; }
     
     //RelationShips
     [ForeignKey(nameof(CustomerId))]

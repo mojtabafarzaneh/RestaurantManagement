@@ -5,7 +5,11 @@ namespace RestaurantManagement.Models;
 
 public class OrderItem
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public OrderItem()
+    {
+        Id = Guid.NewGuid();
+    }
+    public Guid Id { get; set; }
     public int Quantity { get; set; }
     [Required]
     [Column(TypeName = "decimal(18, 2)")]

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace RestaurantManagement.Models.Configuration;
 
@@ -13,5 +14,9 @@ public class MenuConfiguration: IEntityTypeConfiguration<Menu>
         builder
             .Property(m => m.Category)
             .HasConversion<int>();
+        builder
+            .Property<Guid>("Id")
+            .HasColumnType("uniqueidentifier")
+            .HasValueGenerator<GuidValueGenerator>();
     }
 }

@@ -4,7 +4,11 @@ namespace RestaurantManagement.Models;
 
 public class CartItem
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public CartItem()
+    {
+        Id = Guid.NewGuid();
+    }
+    public Guid Id { get; set; }
     //Quantity of this item in the cart
     public int Quantity { get; set; }
     

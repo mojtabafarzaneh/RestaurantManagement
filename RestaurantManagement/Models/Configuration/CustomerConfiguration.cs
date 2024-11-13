@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace RestaurantManagement.Models.Configuration;
 
@@ -16,6 +17,9 @@ public class CustomerConfiguration: IEntityTypeConfiguration<Customer>
             .HasOne(c => c.Cart)
             .WithOne(cart => cart.Customer)
             .HasForeignKey<Cart>(cart => cart.CustomerId);
-
+        var hasValueGenerator = builder
+            .Property<Guid>("Id")
+            .HasColumnType("uniqueidentifier")
+            .HasValueGenerator<GuidValueGenerator>();
     }
 }

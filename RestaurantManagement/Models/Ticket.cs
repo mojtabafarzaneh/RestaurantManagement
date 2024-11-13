@@ -4,8 +4,12 @@ namespace RestaurantManagement.Models;
 
 public class Ticket
 {
-    public Guid Id { get; set; } = Guid.NewGuid();
-    public DateTime CreatedOn { get; set; } = DateTime.Now;
+    public Ticket()
+    {
+        Id = Guid.NewGuid();
+    }
+    public Guid Id { get; set; }
+    public DateTime CreatedOn { get; set; }
     public Status TicketStatus { get; set; }
     public bool IsFlagged { get; set; } = false;
     

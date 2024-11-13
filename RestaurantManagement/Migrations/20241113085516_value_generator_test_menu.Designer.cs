@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RestaurantManagement.Data;
 
@@ -11,9 +12,11 @@ using RestaurantManagement.Data;
 namespace RestaurantManagement.Migrations
 {
     [DbContext(typeof(ApplicationDBContex))]
-    partial class ApplicationDBContexModelSnapshot : ModelSnapshot
+    [Migration("20241113085516_value_generator_test_menu")]
+    partial class value_generator_test_menu
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -282,6 +285,19 @@ namespace RestaurantManagement.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Menus");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("70c5b608-0597-4b02-b517-8523f25179ae"),
+                            Available = true,
+                            Category = 3,
+                            Description = "Ittalian Pizza",
+                            EstimatedPrepTime = 10,
+                            Name = "Pizza",
+                            Price = 9m,
+                            QuantityAvailable = 5
+                        });
                 });
 
             modelBuilder.Entity("RestaurantManagement.Models.Order", b =>

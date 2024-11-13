@@ -5,8 +5,12 @@ namespace RestaurantManagement.Models;
 
 public class Order
 {
+    public Order()
+    {
+        Id = Guid.NewGuid();
+    }
     [Required]
-    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid Id { get; set; }
 
     public int? TableNumber { get; set; }
     [Required]
@@ -22,9 +26,9 @@ public class Order
     public DateTime EstimatedReadyTime { get; set; }
     
     [Required]
-    public DateTime CreatedOn { get; set; } = DateTime.Now;
+    public DateTime CreatedOn { get; set; }
     [Required]
-    public DateTime UpdatedOn { get; set; } = DateTime.Now;
+    public DateTime UpdatedOn { get; set; }
     
     //RelationShips
     //Many-To-One

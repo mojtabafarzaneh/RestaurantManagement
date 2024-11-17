@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using RestaurantManagement.Configurations;
 using RestaurantManagement.Data;
 using RestaurantManagement.Models;
+using RestaurantManagement.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +15,12 @@ builder.Services.AddDataProtection();
 //Implementing DbContext
 builder.Services.AddDbContext<ApplicationDBContex>(options => 
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+//Mapper Implementation
+builder.Services.AddAutoMapper(typeof(MapperConfig));
+
+//Scopes
+builder.Services.AddScoped<IAuthManager, AuthManager>();
 
 //Implementing identity
 builder.Services.AddIdentityCore<Customer>()

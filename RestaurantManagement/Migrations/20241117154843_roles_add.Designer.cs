@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RestaurantManagement.Data;
 
@@ -11,9 +12,11 @@ using RestaurantManagement.Data;
 namespace RestaurantManagement.Migrations
 {
     [DbContext(typeof(ApplicationDBContex))]
-    partial class ApplicationDBContexModelSnapshot : ModelSnapshot
+    [Migration("20241117154843_roles_add")]
+    partial class roles_add
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -378,25 +381,25 @@ namespace RestaurantManagement.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("26538b95-cf4c-41c1-83a9-cac2e7c02ec3"),
+                            Id = new Guid("711bf6a9-5630-425a-892b-4be2a2041607"),
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
-                            Id = new Guid("fb31a523-b286-483b-96eb-0a295a2ce1f7"),
-                            Name = "User",
-                            NormalizedName = "USER"
+                            Id = new Guid("8766e530-18eb-439c-9569-084f859e40e5"),
+                            Name = "Customer",
+                            NormalizedName = "CUSTOMER"
                         },
                         new
                         {
-                            Id = new Guid("0c6c3a50-d184-40f5-b362-8a4b220848bc"),
+                            Id = new Guid("3c48e809-d3ed-4730-aa75-88f86773cc8a"),
                             Name = "Chef",
                             NormalizedName = "CHEF"
                         },
                         new
                         {
-                            Id = new Guid("c9fc3f07-a143-48ea-b189-aab63b71280c"),
+                            Id = new Guid("ce05782b-e00c-4183-8692-361178857935"),
                             Name = "Manager",
                             NormalizedName = "MANAGER"
                         });

@@ -13,27 +13,28 @@ public class RoleConfiguration: IEntityTypeConfiguration<RestaurantRoles>
       .Property<Guid>("Id")
       .HasColumnType("uniqueidentifier")
       .HasValueGenerator<GuidValueGenerator>();
-        //modelBuilder.HasData(
-           // new RestaurantRoles
-           // {
-        //        Name = "Admin",
-       //         NormalizedName = "ADMIN"
-      //      },
-       //     new RestaurantRoles
-    //        {
-         //       Name = "Customer",
-        //        NormalizedName = "CUSTOMER"
-                
-     //       },
-       //     new RestaurantRoles
+     
+        // modelBuilder.HasData(
+        //     new RestaurantRoles
+        //     {
+        //         Name = "Admin",
+        //         NormalizedName = "ADMIN"
+        //     },
+        //     new RestaurantRoles
         //    {
-       //         Name = "Chef",
-         //       NormalizedName = "CHEF"
-           // },
-            //new RestaurantRoles
-            //{
-            //    Name = "Manager",
-              //  NormalizedName = "MANAGER"
-            //});
+        //         Name = "User",
+        //         NormalizedName = "USER"
+        //         
+        //     },
+        //     new RestaurantRoles
+        //     {
+        //         Name = "Chef",
+        //         NormalizedName = "CHEF"
+        //     },
+        //     new RestaurantRoles
+        //     {
+        //         Name = "Manager",
+        //         NormalizedName = "MANAGER"
+        //     });
     }
 }

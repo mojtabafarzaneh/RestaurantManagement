@@ -12,5 +12,6 @@ public class ApiEndpoints
         public const string Profile = $"{Base}/me";
         public const string Login = $"{Base}/login";
         public const string AdminRegister = $"{Base}/admin/register";
+        public const string RefreshToken = $"{Base}/refresh";
     }
 }

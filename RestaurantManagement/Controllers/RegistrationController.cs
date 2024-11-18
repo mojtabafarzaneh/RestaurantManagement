@@ -1,7 +1,9 @@
 using System.Net;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Data;
 using RestaurantManagement.Repository;
 using LoginRequest = RestaurantManagement.Contracts.Requests.LoginRequest;
@@ -53,8 +55,28 @@ public class RegistrationController: ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        throw new NotImplementedException();
+        var authResponse = await _authManager.Login(request);
+        if (authResponse is null)
+        {
+            return Unauthorized();
+        }
+        return Ok(authResponse);
     }
-    
-    
+
+    [HttpPost(ApiEndpoints.Registration.RefreshToken)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public async Task<IActionResult> RefreshToken([FromBody]AuthCustomerResponse request)
+    {
+        var authResponse = await _authManager.VerifyRefreshToken(request);
+        if (authResponse is null)
+        {
+            return Unauthorized();
+        }
+        return Ok(authResponse);
+    }
 }

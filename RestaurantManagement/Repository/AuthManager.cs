@@ -1,3 +1,4 @@
+using System.Collections;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -7,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Models;
+using RestaurantManagement.Services;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace RestaurantManagement.Repository;
@@ -16,11 +18,15 @@ public class AuthManager: IAuthManager
     private readonly UserManager<Customer> _userManager;
     private readonly IMapper _mapper;
     private readonly IConfiguration _config;
+    private readonly RoleManager<RestaurantRoles> _roleManager;
+    private readonly RoleService _roleService;
     private Customer _customer;
 
-    public AuthManager(UserManager<Customer> userManager, IMapper mapper, IConfiguration config)
+    public AuthManager(UserManager<Customer> userManager, IMapper mapper, IConfiguration config, RoleManager<RestaurantRoles> roleManager, RoleService roleService)
     {
         this._config = config;
+        _roleManager = roleManager;
+        _roleService = roleService;
         this._userManager = userManager;
         this._mapper = mapper;
     }
@@ -29,7 +35,6 @@ public class AuthManager: IAuthManager
         var user = _mapper.Map<Customer>(request);
         user.UserName = request.Email;
         var result = await _userManager.CreateAsync(user, request.Password);
-
         if (result.Succeeded)
         {
             await _userManager.AddToRoleAsync(user, "Customer");
@@ -125,6 +130,46 @@ public class AuthManager: IAuthManager
             CustomerId = _customer.Id,
             RefreshToken = await GenerateRefreshToken(),
         };
+    }
 
+    public async Task ChangeCustomerRole(ChangeUserRoleRequest request)
+    {
+        var authorizedUser = _roleService.IsAdminUser();
+        if (!authorizedUser)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        var customer = await _userManager.FindByIdAsync(request.Id);
+        if (customer is null)
+        {
+            throw new Exception("User not found");
+        }
+
+        if (!await _roleManager.RoleExistsAsync(request.Role))
+        {
+            throw new Exception("Role does not exist");
+        }
+        var currentRole = await _userManager.GetRolesAsync(customer);
+        if (currentRole is null ||
+            !currentRole.Contains(request.Role)||
+            currentRole.Contains("Admin") ||
+            currentRole.Contains("Chef")|| 
+            currentRole.Contains("Manager"))
+        {
+            throw new Exception("You are not Allowed to change the role of this user");
+        }
+        var removeResult = await _userManager.RemoveFromRolesAsync(customer, currentRole);
+        if (!removeResult.Succeeded)
+        {
+            throw new Exception($"Failed to remove roles: {string.Join(", ", removeResult.Errors.Select(e => e.Description))}");
+
+        }
+
+        var addResult = await _userManager.AddToRoleAsync(customer, request.Role);
+        if (!addResult.Succeeded)
+        {
+            throw new Exception("Failed to add users new role");
+        }
     }
 }

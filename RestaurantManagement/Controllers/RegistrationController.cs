@@ -3,6 +3,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Data;
 using RestaurantManagement.Repository;
@@ -79,4 +80,26 @@ public class RegistrationController: ControllerBase
         }
         return Ok(authResponse);
     }
+
+    [HttpPost(ApiEndpoints.Registration.AdminRegister)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public async Task<IActionResult> AdminRegister([FromBody] ChangeUserRoleRequest request)
+    {
+        try
+        {
+            await _authManager.ChangeCustomerRole(request);
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+    
+    
 }

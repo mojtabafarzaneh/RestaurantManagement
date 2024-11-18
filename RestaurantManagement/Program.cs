@@ -7,6 +7,7 @@ using RestaurantManagement.Configurations;
 using RestaurantManagement.Data;
 using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
+using RestaurantManagement.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +45,7 @@ builder.Services.AddAutoMapper(typeof(MapperConfig));
 
 //Scopes
 builder.Services.AddScoped<IAuthManager, AuthManager>();
-
+builder.Services.AddScoped<RoleService>();
 //Implementing identity
 builder.Services.AddIdentityCore<Customer>()
     .AddRoles<RestaurantRoles>()
@@ -57,6 +58,9 @@ builder.Services.AddIdentityCore<Customer>()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHttpContextAccessor();
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -65,14 +69,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 //authentication
 app.UseAuthentication();
 app.UseAuthorization();
 
+
+
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
 
 app.MapControllers();
 

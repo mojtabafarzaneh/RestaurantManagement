@@ -46,6 +46,8 @@ builder.Services.AddAutoMapper(typeof(MapperConfig));
 //Scopes
 builder.Services.AddScoped<IAuthManager, AuthManager>();
 builder.Services.AddScoped<RoleService>();
+builder.Services.AddScoped<UserService>();
+
 //Implementing identity
 builder.Services.AddIdentityCore<Customer>()
     .AddRoles<RestaurantRoles>()

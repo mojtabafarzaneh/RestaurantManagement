@@ -11,4 +11,6 @@ public interface IAuthManager
     Task<AuthCustomerResponse> Login(LoginRequest request);
     Task<AuthCustomerResponse> VerifyRefreshToken(AuthCustomerResponse request);
     Task ChangeCustomerRole(ChangeUserRoleRequest request);
+
+    Task<CustomerResponse> Me();
 }

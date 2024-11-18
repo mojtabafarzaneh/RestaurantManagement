@@ -20,13 +20,15 @@ public class AuthManager: IAuthManager
     private readonly IConfiguration _config;
     private readonly RoleManager<RestaurantRoles> _roleManager;
     private readonly RoleService _roleService;
+    private readonly UserService _userService;
     private Customer _customer;
 
-    public AuthManager(UserManager<Customer> userManager, IMapper mapper, IConfiguration config, RoleManager<RestaurantRoles> roleManager, RoleService roleService)
+    public AuthManager(UserManager<Customer> userManager, IMapper mapper, IConfiguration config, RoleManager<RestaurantRoles> roleManager, RoleService roleService, UserService userService)
     {
         this._config = config;
         _roleManager = roleManager;
         _roleService = roleService;
+        _userService = userService;
         this._userManager = userManager;
         this._mapper = mapper;
     }
@@ -171,5 +173,30 @@ public class AuthManager: IAuthManager
         {
             throw new Exception("Failed to add users new role");
         }
+    }
+
+    public async Task<CustomerResponse> Me()
+    {
+        var bearerResult = _userService.UserId();
+        if (bearerResult is null)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        var customerResult = _userManager.FindByIdAsync(bearerResult);
+        if (customerResult is null)
+        {
+            throw new Exception("User not found");
+        }
+
+        return new CustomerResponse
+        {
+            Id = customerResult.Result.Id,
+            FirstName = customerResult.Result.FirstName,
+            LastName = customerResult.Result.LastName,
+            Address = customerResult.Result.Address,
+            Email = customerResult.Result.Email
+        };
+
     }
 }

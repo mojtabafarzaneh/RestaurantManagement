@@ -100,6 +100,24 @@ public class RegistrationController: ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpGet(ApiEndpoints.Registration.Profile)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public async Task<IActionResult> Me()
+    {
+        var response = await _authManager.Me();
+        if (response is null)
+        {
+            return Unauthorized();
+        }
+        
+        return Ok(response);
+    }
     
     
 }

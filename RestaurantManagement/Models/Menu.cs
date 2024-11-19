@@ -6,12 +6,7 @@ namespace RestaurantManagement.Models;
 
 public class Menu
 {
-    public Menu()
-    {
-        Id = Guid.NewGuid();
-    } 
-    [Required]
-    Guid Id { get; init; }
+    [Required] public Guid Id { get; set; } = Guid.NewGuid();
     [Required]
     public string Name { get; set; }
     

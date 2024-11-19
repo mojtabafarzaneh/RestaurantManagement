@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RestaurantManagement.Models;
 
-public class CartItem
+public class CardItem
 {
-    public CartItem()
+    public CardItem()
     {
         Id = Guid.NewGuid();
     }
@@ -19,5 +19,5 @@ public class CartItem
     public Guid MenuId { get; set; }
     
     public Menu Menu { get; set; }
-    public Cart Cart { get; set; }
+    public Card Card { get; set; }
 }

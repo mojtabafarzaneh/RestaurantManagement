@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace RestaurantManagement.Models.Configuration;
 
-public class CartItemConfiguration: IEntityTypeConfiguration<CartItem>
+public class CardItemConfiguration: IEntityTypeConfiguration<CardItem>
 {
-    public void Configure(EntityTypeBuilder<CartItem> builder)
+    public void Configure(EntityTypeBuilder<CardItem> builder)
     {
         builder
             .HasOne(ci => ci.Menu)

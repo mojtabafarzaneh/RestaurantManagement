@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RestaurantManagement.Models;
 
-public class Cart
+public class Card
 {
-    public Cart()
+    public Card()
     {
         Id = Guid.NewGuid();
     }
@@ -19,5 +19,5 @@ public class Cart
     [ForeignKey(nameof(CustomerId))]
     public Guid CustomerId { get; set; }
     public Customer Customer { get; set; }
-    public ICollection<CartItem> CartItems { get; set; }
+    public ICollection<CardItem> CartItems { get; set; }
 }

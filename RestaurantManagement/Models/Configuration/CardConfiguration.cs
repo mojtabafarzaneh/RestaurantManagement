@@ -4,13 +4,13 @@ using Microsoft.EntityFrameworkCore.ValueGeneration;
 
 namespace RestaurantManagement.Models.Configuration;
 
-public class CartConfiguration: IEntityTypeConfiguration<Cart>
+public class CardConfiguration: IEntityTypeConfiguration<Card>
 {
-    public void Configure(EntityTypeBuilder<Cart> builder)
+    public void Configure(EntityTypeBuilder<Card> builder)
     {
         builder
             .HasMany(cart => cart.CartItems)
-            .WithOne(cartitem => cartitem.Cart)
+            .WithOne(cartitem => cartitem.Card)
             .HasForeignKey(cartItem => cartItem.CartId);
         builder
             .Property<Guid>("Id")

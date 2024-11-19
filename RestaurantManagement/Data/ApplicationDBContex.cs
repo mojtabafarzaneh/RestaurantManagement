@@ -22,8 +22,8 @@ public class ApplicationDBContex: IdentityDbContext<Customer, RestaurantRoles, G
         modelBuilder.ApplyConfiguration(new OrderConfiguration());
         modelBuilder.ApplyConfiguration(new OrderItemConfiguration());
         modelBuilder.ApplyConfiguration(new MenuConfiguration());
-        modelBuilder.ApplyConfiguration(new CartConfiguration());
-        modelBuilder.ApplyConfiguration(new CartItemConfiguration());
+        modelBuilder.ApplyConfiguration(new CardConfiguration());
+        modelBuilder.ApplyConfiguration(new CardItemConfiguration());
         modelBuilder.ApplyConfiguration(new TicketConfiguration());
     }
     
@@ -32,7 +32,7 @@ public class ApplicationDBContex: IdentityDbContext<Customer, RestaurantRoles, G
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
-    public DbSet<Cart> Carts => Set<Cart>();
-    public DbSet<CartItem> CartItems => Set<CartItem>();
+    public DbSet<Card> Cards => Set<Card>();
+    public DbSet<CardItem> CardItems => Set<CardItem>();
     
 }

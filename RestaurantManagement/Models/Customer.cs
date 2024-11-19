@@ -14,5 +14,5 @@ public class Customer: IdentityUser<Guid>
     public string LastName { get; set; }
     public string Address { get; set; }
     public ICollection<Order> Orders { get; set; }
-    public Cart Cart { get; set; }
+    public Card Card { get; set; }
 }

@@ -32,7 +32,7 @@ public class Menu
     
     //RelationShips
     public ICollection<OrderItem> OrderItems { get; set; }
-    public ICollection<CartItem> CartItems { get; set; }
+    public ICollection<CardItem> CartItems { get; set; }
 
 
     public enum CategoryType

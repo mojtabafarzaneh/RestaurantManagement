@@ -14,9 +14,9 @@ public class CustomerConfiguration: IEntityTypeConfiguration<Customer>
             .HasForeignKey(o=>o.CustomerId);
         
         builder
-            .HasOne(c => c.Cart)
+            .HasOne(c => c.Card)
             .WithOne(cart => cart.Customer)
-            .HasForeignKey<Cart>(cart => cart.CustomerId);
+            .HasForeignKey<Card>(cart => cart.CustomerId);
         var hasValueGenerator = builder
             .Property<Guid>("Id")
             .HasColumnType("uniqueidentifier")

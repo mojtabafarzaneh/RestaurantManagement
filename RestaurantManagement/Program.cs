@@ -50,7 +50,6 @@ builder.Services.AddScoped<IAuthManager, AuthManager>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<IMenuManager, MenuManager>();
-builder.Services.AddScoped<DurationLoggerFilter>();
 
 //Implementing identity
 builder.Services.AddIdentityCore<Customer>()
@@ -68,6 +67,8 @@ builder.Services.AddHttpContextAccessor();
 
 
 var app = builder.Build();
+
+app.UseMiddleware<DurationLoggerMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

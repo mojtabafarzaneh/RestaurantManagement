@@ -34,7 +34,6 @@ public class RegistrationController: ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    [ServiceFilter(typeof(DurationLoggerFilter))]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var errors = await _authManager.Register(request);

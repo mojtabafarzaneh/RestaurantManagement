@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Data;
+using RestaurantManagement.Middleware;
 using RestaurantManagement.Repository;
 using LoginRequest = RestaurantManagement.Contracts.Requests.LoginRequest;
 using RegisterRequest = RestaurantManagement.Contracts.Requests.RegisterRequest;
@@ -33,6 +34,7 @@ public class RegistrationController: ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ServiceFilter(typeof(DurationLoggerFilter))]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var errors = await _authManager.Register(request);

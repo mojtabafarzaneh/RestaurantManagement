@@ -86,6 +86,7 @@ public class MenuController:ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    
     [Authorize]
     public async Task<ActionResult> GetThisMenu([FromRoute]Guid id)
     {

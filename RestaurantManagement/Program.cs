@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RestaurantManagement.Configurations;
 using RestaurantManagement.Data;
+using RestaurantManagement.Middleware;
 using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
 using RestaurantManagement.Services;
@@ -40,6 +41,7 @@ builder.Services.AddDataProtection();
 builder.Services.AddDbContext<ApplicationDBContex>(options => 
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+
 //Mapper Implementation
 builder.Services.AddAutoMapper(typeof(MapperConfig));
 
@@ -48,6 +50,7 @@ builder.Services.AddScoped<IAuthManager, AuthManager>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<IMenuManager, MenuManager>();
+builder.Services.AddScoped<DurationLoggerFilter>();
 
 //Implementing identity
 builder.Services.AddIdentityCore<Customer>()

@@ -1,6 +1,8 @@
+using System.Data.Common;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Data;
@@ -86,7 +88,6 @@ public class MenuController:ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    
     [Authorize]
     public async Task<ActionResult> GetThisMenu([FromRoute]Guid id)
     {
@@ -109,13 +110,52 @@ public class MenuController:ControllerBase
     [Authorize]
     public async Task<ActionResult> DeleteThisMenu([FromRoute] Guid id)
     {
-        var menu = await _menuManager.GetMenuById(id);
-        if (menu is null)
+        try
         {
-            return NotFound(id);
+            var menu = await _menuManager.GetMenuById(id);
+            if (menu is null)
+            {
+                return NotFound(id);
+            }
+
+            await _menuManager.DeleteMenuById(id);
+            return NoContent();
         }
-        await _menuManager.DeleteMenuById(id);
-        return NoContent();
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+        }
     }
-    
+
+    [HttpPut(ApiEndpoints.Menu.UpdateMenu)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public async Task<ActionResult> UpdateMenu([FromRoute] Guid id, [FromBody] MenuUpdate request)
+    {
+        try
+        {
+            var menu = await _menuManager.GetMenuById(id);
+            if (id != menu.Id || menu is null)
+            {
+                return NotFound(id);
+            }
+            _mapper.Map(request, menu);
+            await _menuManager.UpdateMenuById(menu);
+            
+            return NoContent();
+                
+            
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return StatusCode(StatusCodes.Status403Forbidden, ex.Message); 
+        }
+        
+    }
 }

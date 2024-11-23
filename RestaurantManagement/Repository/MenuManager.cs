@@ -88,6 +88,11 @@ public class MenuManager: IMenuManager
 
     public async Task DeleteMenuById(Guid Id)
     {
+        var isChef = _roleService.IsUserChef();
+        if (!isChef)
+        {
+            throw new Exception("You Are not Permitted to use this route!");
+        }
         var isExist = await GetMenuById(Id);
         if (isExist is null)
         {
@@ -97,5 +102,24 @@ public class MenuManager: IMenuManager
         _context.Menus.Remove(isExist);
         await _context.SaveChangesAsync();
 
+    }
+
+    public async Task UpdateMenuById(Menu request)
+    {
+        var isChef = _roleService.IsUserChef();
+        if (!isChef)
+        {
+            throw new Exception("You Are not Permitted to use this route!");
+        }
+        
+        _context.Menus.Update(request);
+        await _context.SaveChangesAsync();
+        
+    }
+
+    public async Task<bool> IsExist(Guid Id)
+    {
+        var entity = await GetMenuById(Id);
+        return entity != null;
     }
 }

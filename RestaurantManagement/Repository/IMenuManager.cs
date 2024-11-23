@@ -10,4 +10,7 @@ public interface IMenuManager
     public Task<Menu> GetMenuById(Guid Id);
     
     public Task DeleteMenuById(Guid Id);
+    public Task UpdateMenuById(Menu request);
+
+    public Task<bool> IsExist(Guid Id);
 }

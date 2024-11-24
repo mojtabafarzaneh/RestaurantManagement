@@ -24,4 +24,14 @@ public class ApiEndpoints
         public const string UpdateMenu = $"{Base}/{{id:guid}}";
         public const string DeleteMenu = $"{Base}/{{id:guid}}";
     }
+
+    public static class Card
+    {
+        private const string Base = $"{ApiBase}/card";
+        public const string AllCards = $"{Base}";
+        public const string DeleteCard = $"{Base}/me";
+        public const string MyCard = $"{Base}/me";
+        public const string CreateCard = $"{Base}";
+        public const string CardItems = $"{Base}/me/items";
+    }
 }

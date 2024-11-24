@@ -47,9 +47,12 @@ builder.Services.AddAutoMapper(typeof(MapperConfig));
 
 //Scopes
 builder.Services.AddScoped<IAuthManager, AuthManager>();
+builder.Services.AddScoped<ICardManager, CardManager>();
+builder.Services.AddScoped<IOrderManager, OrderManager>();
+builder.Services.AddScoped<IMenuManager, MenuManager>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<IMenuManager, MenuManager>();
+
 
 //Implementing identity
 builder.Services.AddIdentityCore<Customer>()

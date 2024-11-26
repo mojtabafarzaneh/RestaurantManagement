@@ -19,13 +19,6 @@ public class Order
     public Status StatusType {get; set;}
     
     [Required]
-    [Column(TypeName = "decimal(18, 2)")]
-    public decimal TotalPrice { get; set; }
-    [Required]
-    //should be populated by the estimatedPrepTime timespan
-    public DateTime EstimatedReadyTime { get; set; }
-    
-    [Required]
     public DateTime CreatedOn { get; set; }
     [Required]
     public DateTime UpdatedOn { get; set; }

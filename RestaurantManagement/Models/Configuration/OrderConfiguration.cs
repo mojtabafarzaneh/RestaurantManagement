@@ -18,9 +18,6 @@ public class OrderConfiguration:IEntityTypeConfiguration<Order>
             .WithOne(o => o.Order)
             .HasForeignKey<Ticket>(t => t.OrderId);
         
-        builder
-            .Property(o => o.TotalPrice)
-            .HasColumnType("decimal(18,2)");
         
         builder
             .Property(o => o.StatusType)

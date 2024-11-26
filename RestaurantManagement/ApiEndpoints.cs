@@ -37,4 +37,15 @@ public class ApiEndpoints
         public const string UpdateCardItems = $"{Base}/me/items/{{id:guid}}";
         public const string DeleteCardItems = $"{Base}/me/items/{{id:guid}}";
     }
+
+    public static class Order
+    {
+        private const string Base = $"{ApiBase}/order";
+        public const string CreateOrder = $"{Base}";
+        public const string UpdateOrder = $"{Base}/{{id:guid}}";
+        public const string DeleteOrder = $"{Base}/{{id:guid}}";
+        public const string GetOrder = $"{Base}/{{id:guid}}";
+        public const string GetAllOrder = $"{Base}";
+        
+    }
 }

@@ -2,8 +2,10 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Requests.CardRequest;
+using RestaurantManagement.Contracts.Requests.OrderRequest;
 using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Contracts.Responses.CardResponse;
+using RestaurantManagement.Contracts.Responses.OrderResponse;
 using RestaurantManagement.Models;
 
 namespace RestaurantManagement.Configurations;
@@ -28,6 +30,10 @@ public class MapperConfig: Profile
         CreateMap<CardItem, CardItemsUpdateRequest>().ReverseMap();
         CreateMap<CardItem, CardItemRequest>().ReverseMap();
         CreateMap<CardItem, CardItemResponse>().ReverseMap();
+        
+        // Order and OrderItem
+        CreateMap<Order, OrderResponse>().ReverseMap();
+        CreateMap<Order, OrderRequest>().ReverseMap();
 
     }
 }

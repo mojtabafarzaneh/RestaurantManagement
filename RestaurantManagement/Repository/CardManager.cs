@@ -10,8 +10,6 @@ public class CardManager: ICardManager
     private readonly ApplicationDBContex _context;
     private readonly RoleService _roleService;
     private readonly UserService _userService;
-    private ICardManager _cardManagerImplementation;
-
     public CardManager(ApplicationDBContex context, UserService userService, RoleService roleService)
     {
         _context = context;

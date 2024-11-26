@@ -9,7 +9,10 @@ public interface ICardManager
     public Task<Card> CreateCardAsync();
     public Task DeleteCardAsync();
     public Task CreateCardItemAsync(CardItem request);
-    public Task<CardItem> UpdateCardItemAsync(CardItem request);
-    public Task<CardItem> DeleteCardItemAsync(Guid id);
+    public Task UpdateCardItemAsync(CardItem request);
+    
+    public Task<CardItem> GetCardItemByIdAsync(Guid id);
+    public Task<bool> DoesExist(Guid id);
+    public Task DeleteCardItemAsync(Guid id);
     public Task<List<CardItem>> GetAllCardItemsAsync();
 }

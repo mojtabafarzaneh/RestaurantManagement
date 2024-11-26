@@ -25,9 +25,9 @@ public class MapperConfig: Profile
         //Card and CardItems 
         CreateMap<Card, CardRequest>().ReverseMap();
         CreateMap<Card, CardResponse>().ReverseMap();
-        CreateMap<CardItem, CardItemResponse>().ReverseMap();
         CreateMap<CardItem, CardItemsUpdateRequest>().ReverseMap();
         CreateMap<CardItem, CardItemRequest>().ReverseMap();
+        CreateMap<CardItem, CardItemResponse>().ReverseMap();
 
     }
 }

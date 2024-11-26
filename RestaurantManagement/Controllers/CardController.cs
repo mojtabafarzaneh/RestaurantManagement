@@ -159,7 +159,132 @@ public class CardController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
-    
-    
 
+    [HttpGet(ApiEndpoints.Card.CardItemsById)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public async Task<IActionResult> GetCardItemsById([FromRoute] Guid id)
+    {
+        try
+        {
+            var items = await _cardManager.GetCardItemByIdAsync(id);
+            var cardItem = _mapper.Map<CardItemResponse>(items);
+            return Ok(cardItem);
+
+        }
+        catch (NullReferenceException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPut(ApiEndpoints.Card.UpdateCardItems)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public async Task<IActionResult> UpdateCardItem([FromRoute] Guid id,[FromBody] CardItemsUpdateRequest request)
+    {
+        var cardItemId = await _cardManager.GetCardItemByIdAsync(id);
+        if (cardItemId.Id != id)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var mapeCardItem = _mapper.Map(request, cardItemId);
+            await _cardManager.UpdateCardItemAsync(mapeCardItem);
+            return Ok();
+
+        }
+        catch (NullReferenceException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+        return BadRequest(ModelState);
+    }
+
+    [HttpGet(ApiEndpoints.Card.CardItems)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public async Task<IActionResult> GetAllCardItems()
+    {
+        try
+        {
+            var cardItems = await _cardManager.GetAllCardItemsAsync();
+            var response = _mapper.Map<List<CardItemResponse>>(cardItems);
+            return Ok(response);
+        }
+        catch (NullReferenceException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
+
+    [HttpDelete(ApiEndpoints.Card.DeleteCardItems)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public async Task<IActionResult> DeleteCardItems([FromRoute] Guid id)
+    {
+        try
+        {
+            await _cardManager.DeleteCardItemAsync(id);
+            return NoContent();
+        }
+        catch (NullReferenceException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
+    }
 }

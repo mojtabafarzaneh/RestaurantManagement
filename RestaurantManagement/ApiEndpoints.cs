@@ -33,5 +33,8 @@ public class ApiEndpoints
         public const string MyCard = $"{Base}/me";
         public const string CreateCard = $"{Base}";
         public const string CardItems = $"{Base}/me/items";
+        public const string CardItemsById = $"{Base}/me/items/{{id:guid}}";
+        public const string UpdateCardItems = $"{Base}/me/items/{{id:guid}}";
+        public const string DeleteCardItems = $"{Base}/me/items/{{id:guid}}";
     }
 }

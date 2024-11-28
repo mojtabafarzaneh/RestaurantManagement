@@ -118,6 +118,13 @@ public class CardManager: ICardManager
         {
             throw new ArgumentException("There's not enough available quantity of this item.");
         }
+
+        if (await _context.CardItems
+                .AnyAsync(x => x.MenuId == menu.Id && x.CartId == card.Id))
+        {
+            throw new InvalidOperationException("This item is already created");
+        }
+        menu.QuantityAvailable -= request.Quantity;
         await _context.CardItems.AddAsync(request);
         await _context.SaveChangesAsync();
         

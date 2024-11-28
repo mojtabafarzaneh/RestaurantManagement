@@ -25,12 +25,12 @@ public class AuthManager: IAuthManager
 
     public AuthManager(UserManager<Customer> userManager, IMapper mapper, IConfiguration config, RoleManager<RestaurantRoles> roleManager, RoleService roleService, UserService userService)
     {
-        this._config = config;
+        _config = config;
         _roleManager = roleManager;
         _roleService = roleService;
         _userService = userService;
-        this._userManager = userManager;
-        this._mapper = mapper;
+        _userManager = userManager;
+        _mapper = mapper;
     }
     public async Task<IEnumerable<IdentityError>> Register(RegisterRequest request)
     {

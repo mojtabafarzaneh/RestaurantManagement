@@ -34,6 +34,7 @@ public class MapperConfig: Profile
         // Order and OrderItem
         CreateMap<Order, OrderResponse>().ReverseMap();
         CreateMap<Order, OrderRequest>().ReverseMap();
+        CreateMap<Order, UpdateOrderRequest>().ReverseMap();
 
     }
 }

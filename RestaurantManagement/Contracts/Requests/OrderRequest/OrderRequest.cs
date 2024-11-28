@@ -7,8 +7,8 @@ namespace RestaurantManagement.Contracts.Requests.OrderRequest;
 public class OrderRequest
 {
     [Required] 
-    public Order.OrderType TypeOfOrder { get; set; }
+    public Order.OrderType TypeOfOrder { get; init; }
 
-    public int? TableNumber { get; set; }
+    public int? TableNumber { get; init; }
     
 }

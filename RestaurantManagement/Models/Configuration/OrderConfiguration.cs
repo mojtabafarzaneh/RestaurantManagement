@@ -41,5 +41,6 @@ public class OrderConfiguration:IEntityTypeConfiguration<Order>
             .Property<DateTime>("UpdatedOn")
             .HasColumnType("datetime")
             .HasValueGenerator<CreatedAtValueGenerator>();
+        
     }
 }

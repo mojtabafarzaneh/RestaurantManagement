@@ -1,8 +1,4 @@
-using System.Collections;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using RestaurantManagement.Contracts.Requests;
-using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Data;
 using RestaurantManagement.Models;
 using RestaurantManagement.Services;
@@ -44,7 +40,7 @@ public class MenuManager: IMenuManager
         var create = await _context.Menus.AddAsync(request);
         if (create is null || create.State == EntityState.Detached)
         {
-            return null;
+            throw new Exception("Menu could not be created!");
         }
 
         if (await _context.Menus.AnyAsync(x => x.Name == request.Name))
@@ -52,7 +48,7 @@ public class MenuManager: IMenuManager
             throw new Exception($"Menu {request.Name} already exists!");
         }
 
-        if (create.Entity.QuantityAvailable.Value == 0)
+        if (create.Entity.QuantityAvailable != null && create.Entity.QuantityAvailable.Value == 0)
         {
             create.Entity.Available = false;
         }
@@ -64,7 +60,7 @@ public class MenuManager: IMenuManager
         return create.Entity;
     }
 
-    public async Task<Menu?> GetMenuById(Guid Id)
+    public async Task<Menu> GetMenuById(Guid id)
     {
         var isChef = _roleService.IsUserChef();
         if (!isChef)
@@ -72,31 +68,31 @@ public class MenuManager: IMenuManager
             throw new Exception("You Are not Permitted to use this route!");
         }
 
-        if (Id == null)
+        if (id == Guid.Empty)
         {
-            return null;
+            throw new Exception("Menu could not be found!");
         }
         
-        var result =await _context.Menus.FindAsync(Id);
+        var result =await _context.Menus.FindAsync(id);
         if (result is null)
         {
-            return null;
+            throw new Exception("There are no menus with this id in the system!");
         }
         
         return result;
     }
 
-    public async Task DeleteMenuById(Guid Id)
+    public async Task DeleteMenuById(Guid id)
     {
         var isChef = _roleService.IsUserChef();
         if (!isChef)
         {
             throw new Exception("You Are not Permitted to use this route!");
         }
-        var isExist = await GetMenuById(Id);
+        var isExist = await GetMenuById(id);
         if (isExist is null)
         {
-            throw new Exception($"Menu {Id} not found!");
+            throw new Exception($"Menu {id} not found!");
         }
 
         _context.Menus.Remove(isExist);
@@ -117,9 +113,9 @@ public class MenuManager: IMenuManager
         
     }
 
-    public async Task<bool> IsExist(Guid Id)
+    public async Task<bool> IsExist(Guid id)
     {
-        var entity = await GetMenuById(Id);
+        var entity = await GetMenuById(id);
         return entity != null;
     }
 }

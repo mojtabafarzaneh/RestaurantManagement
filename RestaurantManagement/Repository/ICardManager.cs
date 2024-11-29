@@ -6,7 +6,7 @@ public interface ICardManager
 {
     public Task<List<Card>> GetAllCardsAsync();
     public Task<Card> GetCardByIdAsync();
-    public Task<Card> CreateCardAsync();
+    public Task CreateCardAsync(CardItem request);
     public Task DeleteCardAsync();
     public Task CreateCardItemAsync(CardItem request);
     public Task UpdateCardItemAsync(CardItem request);

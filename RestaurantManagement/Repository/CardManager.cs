@@ -50,8 +50,9 @@ public class CardManager: ICardManager
         return card;
     }
 
-    public async Task<Card> CreateCardAsync()
+    public async Task CreateCardAsync(CardItem request)
     {
+        await using var transaction = await _context.Database.BeginTransactionAsync();
         var userId = _userService.UserId();
         if (userId == null)
         {
@@ -68,11 +69,46 @@ public class CardManager: ICardManager
         }
 
         var customer = await _context.Customers.FindAsync(userGuid);
-        var card = new Card { CustomerId = customer.Id };
-        var result = await _context.Cards.AddAsync(card);
-        await _context.SaveChangesAsync();
+        if (customer == null)
+        {
+            throw new NullReferenceException("no customer with this Id was found");
+        }
+
+        try
+        {
+            var card = new Card { CustomerId = customer.Id };
+            var result = await _context.Cards.AddAsync(card);
+            await _context.SaveChangesAsync();
+            
+            
+            request.CartId = result.Entity.Id;
+            var menu = await _context.Menus.FirstOrDefaultAsync(x => x.Id == request.MenuId);
+            if (menu == null)
+            {
+                throw new NullReferenceException("Invalid Menu Id");
+            }
+
+            if (request.Quantity > menu.QuantityAvailable)
+            {
+                throw new ArgumentException("There's not enough available quantity of this item.");
+            }
+
+            if (await _context.CardItems
+                    .AnyAsync(x => x.MenuId == menu.Id && x.CartId == result.Entity.Id))
+            {
+                throw new InvalidOperationException("This item is already created");
+            }
+            menu.QuantityAvailable -= request.Quantity;
+            await _context.CardItems.AddAsync(request);
+            await _context.SaveChangesAsync();
         
-        return result.Entity;
+            await transaction.CommitAsync();
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     public async Task DeleteCardAsync()

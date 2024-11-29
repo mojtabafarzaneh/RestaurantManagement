@@ -41,7 +41,7 @@ public class OrderManager:IOrderManager
         {
             throw new Exception("This order cannot have a table number");
         }
-        
+
         var userId = _userService.UserId();
         if (userId == null)
         {
@@ -63,8 +63,14 @@ public class OrderManager:IOrderManager
             Order.OrderType.InHouse => Order.Status.Preparing,
             _ => request.StatusType
         };
+        
+        if (await _context.Orders.Where(x => x.CustomerId == userGuid).AnyAsync())
+        {
+            throw new Exception("This user has already ordered");
+        }
         try
         {
+            
             var order = await _context.Orders.AddAsync(request);
             await _context.SaveChangesAsync();
             if (order.Entity.StatusType == Order.Status.Preparing)
@@ -78,24 +84,37 @@ public class OrderManager:IOrderManager
                 await _context.SaveChangesAsync();
             }
 
-            var cardItem = await _context.CardItems.Include(cardItem => cardItem.Menu).FirstOrDefaultAsync(x => x.CartId == card.Id);
-            if (cardItem == null)
+            var cardItems = await _context.CardItems
+                .Include(cardItem => cardItem.Menu)
+                .Where(x => x.CartId == card.Id)
+                .ToListAsync();
+            
+            if (cardItems == null)
             {
                 throw new Exception("there are no cardItem for this order!");
             }
-            var orderItem = new OrderItem
+
+            foreach (var cardItem in cardItems)
             {
-                OrderId = order.Entity.Id,
-                MenuId = cardItem.MenuId,
-                Quantity = cardItem.Quantity,
-                Price = cardItem.Menu.Price,
-            };
-            if (await _context.OrderItems
-                    .AnyAsync(x => x.OrderId == order.Entity.Id && x.MenuId == cardItem.MenuId))
-            {
-                throw new Exception("can not make multiple orders for one menuItem");
+                if (await _context.OrderItems.AnyAsync(x => x.OrderId == cardItem.MenuId))
+                {
+                    continue;
+                }
+                var orderItem = new OrderItem
+                {
+                    OrderId = order.Entity.Id,
+                    MenuId = cardItem.MenuId,
+                    Quantity = cardItem.Quantity,
+                    Price = cardItem.Menu.Price,
+                };
+                if (await _context.OrderItems
+                        .AnyAsync(x => x.OrderId == order.Entity.Id && x.MenuId == cardItem.MenuId))
+                {
+                    throw new Exception("can not make multiple orders for one menuItem");
+                }
+                await _context.OrderItems.AddAsync(orderItem);
+                
             }
-            await _context.OrderItems.AddAsync(orderItem);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 

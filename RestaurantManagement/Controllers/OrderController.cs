@@ -126,10 +126,7 @@ public class OrderController: ControllerBase
         }
 
         var isExist = await _orderManager.IsExist(id);
-        if (isExist == null)
-        {
-            return NotFound();
-        }
+
         try
         {
             request.Id = isExist.Id;

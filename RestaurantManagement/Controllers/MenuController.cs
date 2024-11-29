@@ -1,11 +1,8 @@
-using System.Data.Common;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
-using RestaurantManagement.Data;
 using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
 
@@ -91,13 +88,18 @@ public class MenuController:ControllerBase
     [Authorize]
     public async Task<ActionResult> GetThisMenu([FromRoute]Guid id)
     {
-        var query = await _menuManager.GetMenuById(id);
-        if (query is null)
+        try
         {
-            return NotFound(id);
+            var query = await _menuManager.GetMenuById(id);
+            var response = _mapper.Map<MenuResponse>(query);
+            return Ok(response);
+
         }
-        var response = _mapper.Map<MenuResponse>(query);
-        return Ok(response);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return NotFound(ex.Message);
+        }
 
     }
 
@@ -110,14 +112,14 @@ public class MenuController:ControllerBase
     [Authorize]
     public async Task<ActionResult> DeleteThisMenu([FromRoute] Guid id)
     {
+        
+        var menu = await _menuManager.IsExist(id);
+        if (!menu)
+        {
+            return NotFound("Menu not found");
+        }
         try
         {
-            var menu = await _menuManager.GetMenuById(id);
-            if (menu is null)
-            {
-                return NotFound(id);
-            }
-
             await _menuManager.DeleteMenuById(id);
             return NoContent();
         }
@@ -140,7 +142,7 @@ public class MenuController:ControllerBase
         try
         {
             var menu = await _menuManager.GetMenuById(id);
-            if (id != menu.Id || menu is null)
+            if (id != menu.Id)
             {
                 return NotFound(id);
             }

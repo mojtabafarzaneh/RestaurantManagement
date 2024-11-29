@@ -30,13 +30,13 @@ public class CardController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [Authorize]
-    public async Task<IActionResult> CreateCard()
+    public async Task<IActionResult> CreateCard([FromBody] CardItemRequest request)
     {
         try
         {
-            var createdObject = await _cardManager.CreateCardAsync();
-            var response = _mapper.Map<CardResponse>(createdObject);
-            return Ok(response);
+            var card = _mapper.Map<CardItem>(request);
+            await _cardManager.CreateCardAsync(card);
+            return Ok();
         }
         catch (NullReferenceException ex)
         {

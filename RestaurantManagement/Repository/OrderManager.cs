@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using RestaurantManagement.Contracts.Responses.OrderResponse;
 using RestaurantManagement.Data;
+using RestaurantManagement.MessageBroker;
 using RestaurantManagement.Models;
 using RestaurantManagement.Services;
 
@@ -12,14 +13,16 @@ public class OrderManager:IOrderManager
     private readonly ApplicationDBContex _context;
     private readonly RoleService _roleService;
     private readonly UserService _userService;
+    private readonly TicketProducer _ticketProducer;
     private readonly IMapper _mapper;
 
-    public OrderManager(ApplicationDBContex context, RoleService roleService, UserService userService, IMapper mapper)
+    public OrderManager(ApplicationDBContex context, RoleService roleService, UserService userService, IMapper mapper, TicketProducer ticketProducer)
     {
         _context = context;
         _roleService = roleService;
         _userService = userService;
         _mapper = mapper;
+        _ticketProducer = ticketProducer;
     }
 
     public async Task CreateOrder(Order request)
@@ -82,6 +85,8 @@ public class OrderManager:IOrderManager
                 };
                 await _context.Tickets.AddAsync(ticket); 
                 await _context.SaveChangesAsync();
+                
+                await _ticketProducer.PublishTicketAsync(ticket);
             }
 
             var cardItems = await _context.CardItems

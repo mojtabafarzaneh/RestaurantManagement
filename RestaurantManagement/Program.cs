@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using RabbitMQ.Client;
 using RestaurantManagement.Configurations;
 using RestaurantManagement.Data;
+using RestaurantManagement.MessageBroker;
 using RestaurantManagement.Middleware;
 using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
@@ -15,6 +17,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+
 
 //Add Authentication
 builder.Services.AddAuthentication(options =>
@@ -52,6 +57,40 @@ builder.Services.AddScoped<IOrderManager, OrderManager>();
 builder.Services.AddScoped<IMenuManager, MenuManager>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<UserService>();
+
+builder.Services.AddHostedService<TicketConsumerService>();
+
+builder.Services.AddSingleton<IConnection>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<IConnection>>();
+
+    logger.LogInformation("Attempting to create RabbitMQ connection...");
+
+    var factory = new ConnectionFactory
+    {
+        HostName = configuration["RabbitMQ:HostName"],
+        UserName = configuration["RabbitMQ:UserName"],
+        Password = configuration["RabbitMQ:Password"],
+    };
+
+    var connection = factory.CreateConnection();
+    logger.LogInformation("RabbitMQ connection successfully created.");
+    return connection;
+});
+
+
+builder.Services.AddScoped<IModel>(sp =>
+{
+    var connection = sp.GetRequiredService<IConnection>();
+    return connection.CreateModel();
+});
+
+//singleton
+builder.Services.AddTransient<RabbitMQConnectionHelper>();
+builder.Services.AddTransient<TicketProducer>();
+builder.Services.AddTransient<TicketConsumer>();
+
 
 
 //Implementing identity

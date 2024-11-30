@@ -4,9 +4,9 @@ services:
     container_name: sql_server_container
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Mojtaba7878  # Replace with a strong password
+      - SA_PASSWORD=Mojtaba7878
     ports:
-      - "1444:1433"  # Maps container port 1433 to host port 1444
+      - "1444:1433"
   
   rabbitmq:
     image: rabbitmq:3-management

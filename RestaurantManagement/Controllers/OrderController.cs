@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantManagement.Contracts.Requests.OrderRequest;
+using RestaurantManagement.Contracts.Responses.OrderResponse;
 using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
 
@@ -59,7 +60,7 @@ public class OrderController: ControllerBase
     {
         try
         {
-            var response = await _orderManager.GetOrderById(id);
+            var response = await _orderManager.GetOrderById();
             return Ok(response);
         }
         catch (Exception ex)
@@ -97,11 +98,11 @@ public class OrderController: ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [Authorize]
-    public async Task<IActionResult> DeleteOrder([FromRoute] Guid id)
+    public async Task<IActionResult> DeleteOrder()
     {
         try
         {
-            await _orderManager.DeleteOrder(id);
+            await _orderManager.DeleteOrder();
             return NoContent();
         }
         catch (Exception ex)
@@ -134,6 +135,28 @@ public class OrderController: ControllerBase
             await _orderManager.UpdateOrder(order);
             return Ok();
 
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpGet(ApiEndpoints.Order.GetTicket)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [Authorize]
+    public async Task<IActionResult> GetTicket()
+    {
+        try
+        {
+            var ticket = await _orderManager.GetTicketById();
+            var response = _mapper.Map<TicketResponse>(ticket);
+            return Ok(response);
         }
         catch (Exception ex)
         {

@@ -160,7 +160,7 @@ public class OrderManager:IOrderManager
 
     }
 
-    public async Task<OrderResponse> GetOrderById(Guid id)
+    public async Task<OrderResponse> GetOrderById()
     {
         var userId = _userService.UserId();
         var isChef = _roleService.IsUserChef();
@@ -174,22 +174,24 @@ public class OrderManager:IOrderManager
         {
             throw new ArgumentException("Invalid UserId format.");
         }
-        
-        var customer = await _context.Orders.AnyAsync(oi => oi.CustomerId == userGuid);
+
+        var customer = await _context.Customers.AnyAsync(x=> x.Id == userGuid);
         if (customer == false && !isChef && !isManager)
         {
             throw new UnauthorizedAccessException("you can not get other users orders.");
         }
+        
+        
+        var order = await _context.Orders.FirstOrDefaultAsync(x=> x.CustomerId == userGuid);
 
-        var order = await _context.Orders
-            .FirstOrDefaultAsync(x => x.Id == id);
         if (order == null)
         {
-            throw new KeyNotFoundException("there is no order with this id!");
+            throw new Exception("there are no orders!");
         }
+        
         var mappedOrder = _mapper.Map<OrderResponse>(order);
         var orderData = await _context.OrderItems
-            .Where(oi => oi.OrderId == id)
+            .Where(oi => oi.OrderId == order.Id)
             .Include(oi => oi.Menus)
             .GroupBy(oi => oi.OrderId)
             .Select(g => new
@@ -261,7 +263,7 @@ public class OrderManager:IOrderManager
             
 }
 
-    public async Task DeleteOrder(Guid id)
+    public async Task DeleteOrder()
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -281,14 +283,14 @@ public class OrderManager:IOrderManager
                 throw new ArgumentException("Invalid UserId format.");
             }
 
-            var customer = await _context.Orders.AnyAsync(oi => oi.CustomerId == userGuid);
-            if (customer == false && !isChef && !isManager)
+            var isOrder = await _context.Orders.Where(x => x.CustomerId == userGuid).FirstOrDefaultAsync();
+            if (isOrder == null && !isChef && !isManager)
             {
                 throw new UnauthorizedAccessException("you can not get other users orders.");
             }
             
             var orderItems = await _context.OrderItems
-                .Where(oi => oi.OrderId == id).ToListAsync();
+                .Where(oi => isOrder != null && oi.OrderId == isOrder.Id).ToListAsync();
             if (orderItems == null || orderItems.Count == 0)
             {
                 throw new KeyNotFoundException("there is no order with this id!");
@@ -300,14 +302,8 @@ public class OrderManager:IOrderManager
             }
 
             await _context.SaveChangesAsync();
-            var order = await _context.Orders.FirstOrDefaultAsync(x => x.Id == id);
-            
-            if (order == null)
-            {
-                throw new KeyNotFoundException("there is no order with this id!");
-            }
 
-            var ticket = await _context.Tickets.FirstOrDefaultAsync(x => x.OrderId == id) ;
+            var ticket = await _context.Tickets.FirstOrDefaultAsync(x => isOrder != null && x.OrderId == isOrder.Id) ;
             
             if (ticket != null)
             {
@@ -316,7 +312,7 @@ public class OrderManager:IOrderManager
                 
             }
 
-            _context.Orders.Remove(order);
+            if (isOrder != null) _context.Orders.Remove(isOrder);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
         }
@@ -337,5 +333,65 @@ public class OrderManager:IOrderManager
         }
         
         return entity;
+    }
+
+    public async Task<Ticket> GetTicketById()
+    {
+        var userId = _userService.UserId();
+
+        if (userId == null)
+        {
+            throw new UnauthorizedAccessException();
+        }
+
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            throw new ArgumentException("Invalid UserId format.");
+        }
+        
+        var orders = await _context.Orders
+            .Include(x => x.Ticket)
+            .Where(x => x.CustomerId == userGuid)
+            .FirstOrDefaultAsync();
+        
+        if (orders == null)
+        {
+            throw new KeyNotFoundException("there is no order with this id!");
+        }
+
+        var orderItems = await _context.OrderItems
+            .Include(oi => oi.Menus)
+            .Where(oi => oi.OrderId == orders.Id)
+            .GroupBy(oi => oi.OrderId)
+            .Select(g => new
+            {
+                estimatedPrepTime = g.Sum(oi => oi.Quantity * oi.Menus.EstimatedPrepTime)
+            })
+            .ToListAsync();
+        if (orderItems == null || orderItems.Count == 0)
+        {
+            throw new KeyNotFoundException("there is no order with this id!");
+        }
+        
+        if (orders.Ticket == null)
+        {
+            throw new KeyNotFoundException("there is no order Ticket with this id!");
+        }
+        var secondTime = DateTime.Now;
+        
+        foreach (var orderItem in orderItems)
+        {
+            var firstTime = orders.Ticket.CreatedOn.AddMinutes(orderItem.estimatedPrepTime);
+
+            if (secondTime > firstTime)
+            {
+                orders.Ticket.IsFlagged = true;
+                orders.Ticket.TicketStatus = Ticket.Status.Delayed;
+            }
+        }
+
+        await _context.SaveChangesAsync();
+        return orders.Ticket;
+        
     }
 }

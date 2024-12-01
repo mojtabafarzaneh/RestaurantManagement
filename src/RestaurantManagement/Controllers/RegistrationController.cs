@@ -8,6 +8,7 @@ using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Data;
 using RestaurantManagement.Middleware;
 using RestaurantManagement.Repository;
+using RestaurantManagement.Services;
 using LoginRequest = RestaurantManagement.Contracts.Requests.LoginRequest;
 using RegisterRequest = RestaurantManagement.Contracts.Requests.RegisterRequest;
 
@@ -17,16 +18,16 @@ namespace RestaurantManagement.Controllers;
 public class RegistrationController: ControllerBase
 {
     private readonly ILogger<RegistrationController> _logger;
-    private readonly IAuthManager _authManager;
+    private readonly IAuthService _authService;
     private readonly IMapper _mapper;
 
     public RegistrationController(ILogger<RegistrationController> logger, 
         IMapper mapper, 
-        IAuthManager authManager)
+        IAuthService authService)
     {
         _logger = logger;
         _mapper = mapper;
-        _authManager = authManager;
+        _authService = authService;
     }
 
 
@@ -36,17 +37,7 @@ public class RegistrationController: ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        var errors = await _authManager.Register(request);
-        if (errors.Any())
-        {
-            foreach (var error in errors)
-            {
-                ModelState.AddModelError(error.Code, error.Description);
-            }
-            return BadRequest(ModelState);
-            
-        }
-
+        await _authService.Register(request);
         return Ok();
     }
 
@@ -57,11 +48,7 @@ public class RegistrationController: ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var authResponse = await _authManager.Login(request);
-        if (authResponse is null)
-        {
-            return Unauthorized();
-        }
+        var authResponse = await _authService.Login(request);
         return Ok(authResponse);
     }
 
@@ -74,11 +61,7 @@ public class RegistrationController: ControllerBase
     [Authorize]
     public async Task<IActionResult> RefreshToken([FromBody]AuthCustomerResponse request)
     {
-        var authResponse = await _authManager.VerifyRefreshToken(request);
-        if (authResponse is null)
-        {
-            return Unauthorized();
-        }
+        var authResponse = await _authService.VerifyRefreshToken(request);
         return Ok(authResponse);
     }
 
@@ -91,15 +74,8 @@ public class RegistrationController: ControllerBase
     [Authorize]
     public async Task<IActionResult> AdminRegister([FromBody] ChangeUserRoleRequest request)
     {
-        try
-        {
-            await _authManager.ChangeCustomerRole(request);
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        await _authService.ChangeCustomerRole(request);
+        return Ok();
     }
 
     [HttpGet(ApiEndpoints.Registration.Profile)]
@@ -111,15 +87,9 @@ public class RegistrationController: ControllerBase
     [Authorize]
     public async Task<IActionResult> Me()
     {
-        var response = await _authManager.Me();
-        if (response is null)
-        {
-            return Unauthorized();
-        }
+        var response = await _authService.Me();
         
         return Ok(response);
     }
-    
-    
     
 }

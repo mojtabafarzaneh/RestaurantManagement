@@ -5,6 +5,7 @@ using RestaurantManagement.Contracts.Requests.CardRequest;
 using RestaurantManagement.Contracts.Responses.CardResponse;
 using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
+using RestaurantManagement.Services;
 
 namespace RestaurantManagement.Controllers;
 
@@ -14,13 +15,13 @@ public class CardController : ControllerBase
 
     private readonly ILogger<CardController> _logger;
     private readonly IMapper _mapper;
-    private readonly ICardManager _cardManager;
+    private readonly ICardService _cardService;
 
-    public CardController(ILogger<CardController> logger, IMapper mapper, ICardManager cardManager)
+    public CardController(ILogger<CardController> logger, IMapper mapper, ICardService cardService)
     {
         _logger = logger;
         _mapper = mapper;
-        _cardManager = cardManager;
+        _cardService = cardService;
     }
 
     [HttpPost(ApiEndpoints.Card.CreateCard)]
@@ -32,24 +33,9 @@ public class CardController : ControllerBase
     [Authorize]
     public async Task<IActionResult> CreateCard([FromBody] CardItemRequest request)
     {
-        try
-        {
-            var card = _mapper.Map<CardItem>(request);
-            await _cardManager.CreateCardAsync(card);
-            return Ok();
-        }
-        catch (NullReferenceException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+       var mappedCard = _mapper.Map<CardItem>(request);
+       await _cardService.CreateCardAsync(mappedCard);
+       return Ok();
     }
 
     [HttpGet(ApiEndpoints.Card.AllCards)]
@@ -61,20 +47,9 @@ public class CardController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetAllCards()
     {
-        try
-        {
-            var cards = await _cardManager.GetAllCardsAsync();
-            var response = _mapper.Map<List<CardResponse>>(cards);
-            return Ok(response);
-        }
-        catch (NullReferenceException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
+        var cards = await _cardService.GetAllCardsAsync();
+        var mappedCards = _mapper.Map<List<Card>>(cards);
+        return Ok(mappedCards);
     }
 
     [HttpGet(ApiEndpoints.Card.MyCard)]
@@ -86,20 +61,9 @@ public class CardController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetMyCard()
     {
-        try
-        {
-            var card = await _cardManager.GetCardByIdAsync();
-            var response = _mapper.Map<CardResponse>(card);
-            return Ok(response);
-        }
-        catch (NullReferenceException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
+        var request = await _cardService.GetCardByIdAsync();
+        var mappedCard = _mapper.Map<Card>(request);
+        return Ok(mappedCard);
 
     }
 
@@ -112,19 +76,8 @@ public class CardController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteCard()
     {
-        try
-        {
-            await _cardManager.DeleteCardAsync();
-            return NoContent();
-        }
-        catch (NullReferenceException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
+        await _cardService.DeleteCardAsync();
+        return NoContent();
     }
 
     [HttpPost(ApiEndpoints.Card.CardItems)]
@@ -136,28 +89,9 @@ public class CardController : ControllerBase
     [Authorize]
     public async Task<IActionResult> AddCardItem([FromBody] CardItemRequest request)
     {
-        try
-        {
-            var cardItem = _mapper.Map<CardItem>(request);
-            await _cardManager.CreateCardItemAsync(cardItem);
-            return Ok();
-        }
-        catch (NullReferenceException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+       var mappedCard = _mapper.Map<CardItem>(request);
+       await _cardService.CreateCardItemAsync(mappedCard);
+       return Ok();
     }
 
     [HttpGet(ApiEndpoints.Card.CardItemsById)]
@@ -169,25 +103,9 @@ public class CardController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCardItemsById([FromRoute] Guid id)
     {
-        try
-        {
-            var items = await _cardManager.GetCardItemByIdAsync(id);
-            var cardItem = _mapper.Map<CardItemResponse>(items);
-            return Ok(cardItem);
-
-        }
-        catch (NullReferenceException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var req =await _cardService.GetCardItemByIdAsync(id);
+        var mappedCard = _mapper.Map<CardItem>(req);
+        return Ok(mappedCard);
     }
 
     [HttpPut(ApiEndpoints.Card.UpdateCardItems)]
@@ -199,36 +117,14 @@ public class CardController : ControllerBase
     [Authorize]
     public async Task<IActionResult> UpdateCardItem([FromRoute] Guid id,[FromBody] CardItemsUpdateRequest request)
     {
-        var cardItemId = await _cardManager.GetCardItemByIdAsync(id);
+        var cardItemId = await _cardService.GetCardItemByIdAsync(id);
         if (cardItemId.Id != id)
         {
             return BadRequest(ModelState);
         }
-
-        try
-        {
-            var mapeCardItem = _mapper.Map(request, cardItemId);
-            await _cardManager.UpdateCardItemAsync(mapeCardItem);
-            return Ok();
-
-        }
-        catch (NullReferenceException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex.Message);
-        }
-        return BadRequest(ModelState);
+        var mappedCardItem = _mapper.Map(request, cardItemId);
+        await _cardService.UpdateCardItemAsync(mappedCardItem); 
+        return Ok();
     }
 
     [HttpGet(ApiEndpoints.Card.CardItems)]
@@ -239,25 +135,10 @@ public class CardController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [Authorize]
     public async Task<IActionResult> GetAllCardItems()
-    {
-        try
-        {
-            var cardItems = await _cardManager.GetAllCardItemsAsync();
-            var response = _mapper.Map<List<CardItemResponse>>(cardItems);
-            return Ok(response);
-        }
-        catch (NullReferenceException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex.Message);
-        }
+    { 
+        var cardItems = await _cardService.GetAllCardItemsAsync(); 
+        var response = _mapper.Map<List<CardItemResponse>>(cardItems); 
+        return Ok(response);
     }
 
     [HttpDelete(ApiEndpoints.Card.DeleteCardItems)]
@@ -269,22 +150,8 @@ public class CardController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteCardItems([FromRoute] Guid id)
     {
-        try
-        {
-            await _cardManager.DeleteCardItemAsync(id);
-            return NoContent();
-        }
-        catch (NullReferenceException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return Unauthorized(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, ex.Message);
-        }
+
+        await _cardService.DeleteCardItemAsync(id);
+        return NoContent();
     }
 }

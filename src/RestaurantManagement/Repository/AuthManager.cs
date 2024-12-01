@@ -8,7 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Models;
-using RestaurantManagement.Services;
+using RestaurantManagement.Helper;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace RestaurantManagement.Repository;
@@ -145,12 +145,12 @@ public class AuthManager: IAuthManager
         var customer = await _userManager.FindByIdAsync(request.Id);
         if (customer is null)
         {
-            throw new Exception("User not found");
+            throw new System.Exception("User not found");
         }
 
         if (!await _roleManager.RoleExistsAsync(request.Role))
         {
-            throw new Exception("Role does not exist");
+            throw new System.Exception("Role does not exist");
         }
         var currentRole = await _userManager.GetRolesAsync(customer);
         if (currentRole is null ||
@@ -159,19 +159,19 @@ public class AuthManager: IAuthManager
             currentRole.Contains("Chef")|| 
             currentRole.Contains("Manager"))
         {
-            throw new Exception("You are not Allowed to change the role of this user");
+            throw new System.Exception("You are not Allowed to change the role of this user");
         }
         var removeResult = await _userManager.RemoveFromRolesAsync(customer, currentRole);
         if (!removeResult.Succeeded)
         {
-            throw new Exception($"Failed to remove roles: {string.Join(", ", removeResult.Errors.Select(e => e.Description))}");
+            throw new System.Exception($"Failed to remove roles: {string.Join(", ", removeResult.Errors.Select(e => e.Description))}");
 
         }
 
         var addResult = await _userManager.AddToRoleAsync(customer, request.Role);
         if (!addResult.Succeeded)
         {
-            throw new Exception("Failed to add users new role");
+            throw new System.Exception("Failed to add users new role");
         }
     }
 
@@ -186,7 +186,7 @@ public class AuthManager: IAuthManager
         var customerResult = _userManager.FindByIdAsync(bearerResult);
         if (customerResult is null)
         {
-            throw new Exception("User not found");
+            throw new System.Exception("User not found");
         }
 
         return new CustomerResponse

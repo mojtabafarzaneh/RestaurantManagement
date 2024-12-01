@@ -10,6 +10,7 @@ using RestaurantManagement.MessageBroker;
 using RestaurantManagement.Middleware;
 using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
+using RestaurantManagement.Helper;
 using RestaurantManagement.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,6 +56,10 @@ builder.Services.AddScoped<IAuthManager, AuthManager>();
 builder.Services.AddScoped<ICardManager, CardManager>();
 builder.Services.AddScoped<IOrderManager, OrderManager>();
 builder.Services.AddScoped<IMenuManager, MenuManager>();
+builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IMenuService, MenuService>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<UserService>();
 
@@ -110,7 +115,9 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
+//middleware 
 app.UseMiddleware<DurationLoggerMiddleware>();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -128,5 +135,7 @@ app.UseHttpsRedirection();
 
 
 app.MapControllers();
+
+app.UseMiddleware<ErrorHandlerMiddleware>();
 
 app.Run();

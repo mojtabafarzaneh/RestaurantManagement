@@ -5,6 +5,7 @@ using RestaurantManagement.Contracts.Requests.OrderRequest;
 using RestaurantManagement.Contracts.Responses.OrderResponse;
 using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
+using RestaurantManagement.Services;
 
 namespace RestaurantManagement.Controllers;
 [ApiController]
@@ -12,14 +13,14 @@ public class OrderController: ControllerBase
 {
     private readonly ILogger<OrderController> _logger;
     private readonly IMapper _mapper;
-    private readonly IOrderManager _orderManager;
+    private readonly IOrderService _orderService;
     
 
-    public OrderController(ILogger<OrderController> logger, IMapper mapper, IOrderManager orderManager)
+    public OrderController(ILogger<OrderController> logger, IMapper mapper, IOrderService orderService)
     {
         _logger = logger;
         _mapper = mapper;
-        _orderManager = orderManager;
+        _orderService = orderService;
     }
 
     [HttpPost(ApiEndpoints.Order.CreateOrder)]
@@ -36,17 +37,9 @@ public class OrderController: ControllerBase
             return BadRequest("The type of order cannot be null");
         }
 
-        try
-        {
-            var order = _mapper.Map<Order>(request);
-            await _orderManager.CreateOrder(order);
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
-            return BadRequest(ex.Message);
-        }
+        var order = _mapper.Map<Order>(request);
+        await _orderService.CreateOrder(order);
+        return Ok();
     }
 
     [HttpGet(ApiEndpoints.Order.GetOrder)]
@@ -56,18 +49,10 @@ public class OrderController: ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [Authorize]
-    public async Task<IActionResult> GetOrder([FromRoute] Guid id)
+    public async Task<IActionResult> GetOrder()
     {
-        try
-        {
-            var response = await _orderManager.GetOrderById();
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
-            return BadRequest(ex.Message);
-        }
+        var response = await _orderService.GetOrderById(); 
+        return Ok(response);
     }
 
     [HttpGet(ApiEndpoints.Order.GetAllOrder)]
@@ -79,16 +64,10 @@ public class OrderController: ControllerBase
     [Authorize]
     public async Task<IActionResult> GetAllOrder()
     {
-        try
-        {
-            var orders = await _orderManager.GetOrders();
-            return Ok(orders);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
-            return BadRequest(ex.Message);
-        }
+
+        var orders = await _orderService.GetOrders();
+        return Ok(orders);
+
     }
 
     [HttpDelete(ApiEndpoints.Order.DeleteOrder)]
@@ -100,16 +79,9 @@ public class OrderController: ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteOrder()
     {
-        try
-        {
-            await _orderManager.DeleteOrder();
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
-            return BadRequest(ex.Message);
-        }
+        await _orderService.DeleteOrder();
+        return NoContent();
+
     }
 
     [HttpPut(ApiEndpoints.Order.UpdateOrder)]
@@ -126,21 +98,12 @@ public class OrderController: ControllerBase
             return BadRequest("The type of order cannot be null");
         }
 
-        var isExist = await _orderManager.IsExist(id);
-
-        try
-        {
-            request.Id = isExist.Id;
-            var order = _mapper.Map<Order>(request);
-            await _orderManager.UpdateOrder(order);
-            return Ok();
-
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
-            return BadRequest(ex.Message);
-        }
+        var isExist = await _orderService.IsExist(id);
+        request.Id = isExist.Id;
+        var order = _mapper.Map<Order>(request);
+        await _orderService.UpdateOrder(order);
+        return Ok();
+            
     }
 
     [HttpGet(ApiEndpoints.Order.GetTicket)]
@@ -152,16 +115,9 @@ public class OrderController: ControllerBase
     [Authorize]
     public async Task<IActionResult> GetTicket()
     {
-        try
-        {
-            var ticket = await _orderManager.GetTicketById();
-            var response = _mapper.Map<TicketResponse>(ticket);
-            return Ok(response);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, ex.Message);
-            return BadRequest(ex.Message);
-        }
+
+        var ticket = await _orderService.GetTicketById();
+        var response = _mapper.Map<TicketResponse>(ticket);
+        return Ok(response);
     }
 }

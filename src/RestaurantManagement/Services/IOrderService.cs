@@ -1,9 +1,9 @@
 ﻿using RestaurantManagement.Contracts.Responses.OrderResponse;
 using RestaurantManagement.Models;
 
-namespace RestaurantManagement.Repository;
+namespace RestaurantManagement.Services;
 
-public interface IOrderManager
+public interface IOrderService
 {
     public Task CreateOrder(Order request);
     public Task<List<OrderResponse>> GetOrders();
@@ -13,6 +13,5 @@ public interface IOrderManager
     public Task<Order> IsExist(Guid id);
     
     public Task<Ticket> GetTicketById();
-    public Task<bool> DoesCustomerExist(Guid id);
 
 }

@@ -20,13 +20,6 @@ public class CardManager: ICardManager
 
     public async Task<List<Card>> GetAllCardsAsync()
     {
-        var isChef = _roleHelper.IsUserChef();
-        var isManager = _roleHelper.IsManagerUser();
-        var isAdmin = _roleHelper.IsAdminUser();
-        if (!isChef && !isManager && !isAdmin)
-        {
-            throw new UnauthorizedAccessException();
-        }
         var cards = await _context.Cards.ToListAsync();
         if (cards == null)
         {
@@ -35,17 +28,12 @@ public class CardManager: ICardManager
         return cards;
     }
 
-    public async Task<Card> GetCardByIdAsync()
+    public async Task<Card> GetCardByIdAsync(Guid id)
     {
         try
         {
-            var isUser = _userHelper.UserId();
-            if (isUser == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
 
-            var card = await _context.Cards.FirstOrDefaultAsync(c => c.CustomerId.ToString() == isUser);
+            var card = await _context.Cards.FirstOrDefaultAsync(c => c.CustomerId == id);
             if (card == null)
             {
                 throw new NullReferenceException();
@@ -60,48 +48,32 @@ public class CardManager: ICardManager
         }
     }
 
-    public async Task CreateCardAsync(CardItem request)
+    public async Task<bool> DoesCustomerExists(Guid id)
+    {
+        return await _context.Customers.AnyAsync(x => x.Id == id);
+
+    }
+
+
+    public async Task<Menu?> DoesMenuExist(Guid id)
+    {
+        var menu = await _context.Menus.FindAsync(id);
+        if (menu == null)
+        {
+            return null;
+        }
+        return menu;
+    }
+    
+
+    public async Task CreateCardAsync(CardItem request, Guid id, Card card, Menu menu)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try{
-            
-            var userId = _userHelper.UserId();
-            if (userId == null)
-            {
-                throw new NullReferenceException();
-            }
-
-            if (await _context.Cards.AnyAsync(c => c.CustomerId.ToString() == userId))
-            {
-                throw new InvalidOperationException("The card is already created");
-            }
-            if (!Guid.TryParse(userId, out var userGuid))
-            {
-                throw new ArgumentException("Invalid UserId format.");
-            }
-
-            var customer = await _context.Customers.FindAsync(userGuid);
-            if (customer == null)
-            {
-                throw new NullReferenceException("no customer with this Id was found");
-            }
-        
-            var card = new Card { CustomerId = customer.Id };
             var result = await _context.Cards.AddAsync(card);
             await _context.SaveChangesAsync();
             
-            
             request.CartId = result.Entity.Id;
-            var menu = await _context.Menus.FirstOrDefaultAsync(x => x.Id == request.MenuId);
-            if (menu == null)
-            {
-                throw new NullReferenceException("Invalid Menu Id");
-            }
-
-            if (request.Quantity > menu.QuantityAvailable)
-            {
-                throw new ArgumentException("There's not enough available quantity of this item.");
-            }
 
             if (await _context.CardItems
                     .AnyAsync(x => x.MenuId == menu.Id && x.CartId == result.Entity.Id))
@@ -121,22 +93,20 @@ public class CardManager: ICardManager
         }
     }
 
-    public async Task DeleteCardAsync()
+    public async Task<Card?> DoesCardExist(Guid id)
+    {
+        var card = await _context.Cards.FirstOrDefaultAsync(c => c.CustomerId == id);
+
+        if (card == null)
+        {
+            return null;
+        }
+        return card;
+    }
+    public async Task DeleteCardAsync(Card card)
     {
         try
         {
-            var userId = _userHelper.UserId();
-            if (userId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            var card = _context.Cards.FirstOrDefault(c => c.CustomerId.ToString() == userId);
-            if (card == null)
-            {
-                throw new NullReferenceException();
-            }
-
             _context.Cards.Remove(card);
             await _context.SaveChangesAsync();
         }
@@ -147,46 +117,16 @@ public class CardManager: ICardManager
         }
     }
 
+    public async Task<bool> DoesCardItemExist(Guid menuId, Guid cardId)
+    {
+        return await _context.CardItems
+            .AnyAsync(x => x.MenuId == menuId && x.CartId == cardId);
+    }
+
     public async Task CreateCardItemAsync(CardItem request)
     {
         try
         {
-            var userId = _userHelper.UserId();
-            if (userId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            if (!Guid.TryParse(userId, out var userGuid))
-            {
-                throw new ArgumentException("Invalid UserId format.");
-            }
-
-            var card = await _context.Cards.FirstOrDefaultAsync(c => c.CustomerId == userGuid);
-            if (card == null)
-            {
-                throw new NullReferenceException("Invalid Card Id");
-            }
-
-            request.CartId = card.Id;
-            var menu = await _context.Menus.FirstOrDefaultAsync(x => x.Id == request.MenuId);
-            if (menu == null)
-            {
-                throw new NullReferenceException("Invalid Menu Id");
-            }
-
-            if (request.Quantity > menu.QuantityAvailable)
-            {
-                throw new ArgumentException("There's not enough available quantity of this item.");
-            }
-
-            if (await _context.CardItems
-                    .AnyAsync(x => x.MenuId == menu.Id && x.CartId == card.Id))
-            {
-                throw new InvalidOperationException("This item is already created");
-            }
-
-            menu.QuantityAvailable -= request.Quantity;
             await _context.CardItems.AddAsync(request);
             await _context.SaveChangesAsync();
 
@@ -202,28 +142,6 @@ public class CardManager: ICardManager
     {
         try
         {
-            var userId = _userHelper.UserId();
-            if (userId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            if (request == null)
-            {
-                throw new NullReferenceException("Please provide a request.");
-            }
-
-            var menu = await _context.Menus.FirstOrDefaultAsync(x => x.Id == request.MenuId);
-            if (menu == null)
-            {
-                throw new NullReferenceException("Invalid Menu Id");
-            }
-
-            if (request.Quantity > menu.QuantityAvailable)
-            {
-                throw new ArgumentException("There's not enough available quantity of this item.");
-            }
-
             _context.CardItems.Update(request);
             await _context.SaveChangesAsync();
         }
@@ -239,31 +157,10 @@ public class CardManager: ICardManager
     {
         try
         {
-            var userId = _userHelper.UserId();
-            if (userId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            if (!Guid.TryParse(userId, out var userGuid))
-            {
-                throw new ArgumentException("Invalid UserId format.");
-            }
-
-            if (!await _context.Cards.AnyAsync(x => x.CustomerId == userGuid))
-            {
-                throw new UnauthorizedAccessException("you can not get items of this card!");
-            }
-
-            if (id == Guid.Empty)
-            {
-                throw new NullReferenceException("card id can not be empty.");
-            }
-
             var cardItem = await _context.CardItems.FindAsync(id);
             if (cardItem == null)
             {
-                throw new NullReferenceException();
+                throw new NullReferenceException("there are no cardItem with this id");
             }
 
             return cardItem;
@@ -277,42 +174,10 @@ public class CardManager: ICardManager
         
     }
 
-    public async Task DeleteCardItemAsync(Guid id)
+    public async Task DeleteCardItemAsync(CardItem cardItem)
     {
         try
         {
-            var userId = _userHelper.UserId();
-            if (userId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            var isChef = _roleHelper.IsUserChef();
-            if (!isChef)
-            {
-                if (!Guid.TryParse(userId, out var userGuid))
-                {
-                    throw new ArgumentException("Invalid UserId format.");
-                }
-
-                var card = await _context.Cards.FirstOrDefaultAsync(x => x.CustomerId == userGuid);
-                if (card == null)
-                {
-                    throw new NullReferenceException();
-                }
-
-                if (card.CustomerId != userGuid)
-                {
-                    throw new UnauthorizedAccessException("you can not delete this item!");
-                }
-            }
-
-            var cardItem = await _context.CardItems.FindAsync(id);
-            if (cardItem == null)
-            {
-                throw new NullReferenceException("there are no card item in this card!");
-            }
-
             _context.CardItems.Remove(cardItem);
             await _context.SaveChangesAsync();
         }
@@ -327,14 +192,6 @@ public class CardManager: ICardManager
     {
         try
         {
-            var isChef = _roleHelper.IsUserChef();
-            var isManager = _roleHelper.IsManagerUser();
-            var isAdmin = _roleHelper.IsAdminUser();
-            if (!isChef && !isManager && !isAdmin)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
             var cardItems = await _context.CardItems.ToListAsync();
             if (cardItems == null)
             {

@@ -91,15 +91,12 @@ public class OrderController: ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [Authorize]
-    public async Task<IActionResult> UpdateOrder([FromRoute] Guid id, [FromBody] UpdateOrderRequest request)
+    public async Task<IActionResult> UpdateOrder([FromBody] UpdateOrderRequest request)
     {
         if (request is { StatusType: 0 })
         {
             return BadRequest("The type of order cannot be null");
         }
-
-        var isExist = await _orderService.IsExist(id);
-        request.Id = isExist.Id;
         var order = _mapper.Map<Order>(request);
         await _orderService.UpdateOrder(order);
         return Ok();

@@ -42,7 +42,7 @@ public class ApiEndpoints
     {
         private const string Base = $"{ApiBase}/order";
         public const string CreateOrder = $"{Base}";
-        public const string UpdateOrder = $"{Base}/{{id:guid}}";
+        public const string UpdateOrder = $"{Base}/me";
         public const string DeleteOrder = $"{Base}/me";
         public const string GetOrder = $"{Base}/me";
         public const string GetAllOrder = $"{Base}";

@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Net;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using RestaurantManagement.Contracts.Responses.OrderResponse;
 using RestaurantManagement.Data;
@@ -105,18 +106,19 @@ public class OrderManager:IOrderManager
         }
     }
 
-    public async Task<List<OrderResponse>> GetOrders()
+    public async Task<List<Order>> DoesAnyOrdersExist()
+    {
+        var orders = await _context.Orders
+            .ToListAsync();
+        
+        return orders;
+        
+    }
+
+    public async Task<List<OrderResponse>> GetOrders(List<Order> orders)
     {
         try
         {
-            var orders = await _context.Orders
-                .ToListAsync();
-
-
-            if (orders == null || orders.Count == 0)
-            {
-                throw new Exception("there are no orders!");
-            }
 
             var ordersMapped = _mapper.Map<List<OrderResponse>>(orders);
             var orderData = await _context.OrderItems
@@ -140,36 +142,24 @@ public class OrderManager:IOrderManager
             _logger.LogError("There was an error getting the orders!");
             throw;
         }
+
+
+    }
     
+    public async Task<Order?> FindOrderById(Guid id)
+    {
+        var order =await _context.Orders.FirstOrDefaultAsync(x => x.CustomerId == id);
+        return order ?? null;
+    }
 
-}
-
-    public async Task<OrderResponse> GetOrderById()
+    public async Task<OrderResponse> GetOrderById(Order order)
     {
         try
         {
-            var userId = _userHelper.UserId();
-
-            if (userId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            if (!Guid.TryParse(userId, out var userGuid))
-            {
-                throw new ArgumentException("Invalid UserId format.");
-            }
-
-            var order = await _context.Orders.FirstOrDefaultAsync(x => x.CustomerId == userGuid);
-
-            if (order == null)
-            {
-                throw new Exception("there are no orders!");
-            }
-
+            
             var mappedOrder = _mapper.Map<OrderResponse>(order);
             var orderData = await _context.OrderItems
-                .Where(oi => oi.OrderId == order.Id)
+                .Where(oi => oi.OrderId == order!.Id)
                 .Include(oi => oi.Menus)
                 .GroupBy(oi => oi.OrderId)
                 .Select(g => new
@@ -179,7 +169,7 @@ public class OrderManager:IOrderManager
                 }).FirstOrDefaultAsync();
             if (orderData == null)
             {
-                throw new KeyNotFoundException("there is no order with this id!");
+                throw new KeyNotFoundException("there is no orderItem with this id!");
             }
 
             mappedOrder.TotalPrice = orderData.TotalPrice;
@@ -196,91 +186,50 @@ public class OrderManager:IOrderManager
         
     }
 
-    public async Task UpdateOrder(Order request)
+    public async Task RemoveTicket(Ticket ticket)
     {
-        try
-        {
-            var userId = _userHelper.UserId();
-
-            if (!Guid.TryParse(userId, out var userGuid))
-            {
-                throw new ArgumentException("Invalid UserId format.");
-            }
-
-
-            var order = await _context.Orders
-                .Where(x => x.CustomerId == userGuid)
-                .FirstOrDefaultAsync(x => x.Id == request.Id);
-            if (order == null)
-            {
-                throw new KeyNotFoundException("there is no order with this id!");
-            }
-
-            ArgumentNullException.ThrowIfNull(request);
-            request.Id = order.Id;
-
-            var ticket = await _context.Tickets
-                .FirstOrDefaultAsync(t => t.OrderId == order.Id);
-
-            if (ticket != null)
-            {
-                switch (request.StatusType)
-                {
-                    case Order.Status.Completed:
-                    case Order.Status.Delivered:
-                        ticket.TicketStatus = Ticket.Status.Served;
-                        break;
-                    case Order.Status.Cancelled:
-                        _context.Tickets.Remove(ticket);
-                        break;
-                    case Order.Status.Delayed:
-                        ticket.TicketStatus = Ticket.Status.Delayed;
-                        ticket.IsFlagged = true;
-                        break;
-                }
-
-            }
-
-            order.StatusType = request.StatusType;
-            await _context.SaveChangesAsync();
-        }
-
-        catch (Exception)
-        {
-            _logger.LogError("There was an error updating the order!");
-            throw;
-        }
-            
+        _context.Tickets.Remove(ticket);
+        await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteOrder()
+    public async Task<Ticket?> FindTicket(Guid id)
+    {
+        
+        var ticket = await _context.Tickets
+            .FirstOrDefaultAsync(t => t.OrderId == id);
+        return ticket ?? null;
+    }
+
+    public async Task UpdateOrder(Order request)
+    {
+
+        ArgumentNullException.ThrowIfNull(request);
+        await _context.SaveChangesAsync();
+
+        
+    }
+
+    public async Task<Order?> GetOrderById(Guid id)
+    {
+        var isOrder = await _context.Orders.Where(x => x.CustomerId == id).FirstOrDefaultAsync();
+
+        if (isOrder == null)
+        {
+            return null;
+        }
+        return isOrder;
+
+    }
+
+    public async Task DeleteOrder(Order order)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
-            var userId = _userHelper.UserId();
-            var isChef = _roleHelper.IsUserChef();
-            var isManager = _roleHelper.IsManagerUser();
-
-            if (userId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            if (!Guid.TryParse(userId, out var userGuid))
-            {
-                throw new ArgumentException("Invalid UserId format.");
-            }
-
-            var isOrder = await _context.Orders.Where(x => x.CustomerId == userGuid).FirstOrDefaultAsync();
-            if (isOrder == null && !isChef && !isManager)
-            {
-                throw new UnauthorizedAccessException("you can not get other users orders.");
-            }
             
             var orderItems = await _context.OrderItems
-                .Where(oi => isOrder != null && oi.OrderId == isOrder.Id).ToListAsync();
+                .Where(oi => oi.OrderId == order.Id).ToListAsync();
             if (orderItems == null || orderItems.Count == 0)
             {
                 throw new KeyNotFoundException("there is no order with this id!");
@@ -293,7 +242,7 @@ public class OrderManager:IOrderManager
 
             await _context.SaveChangesAsync();
 
-            var ticket = await _context.Tickets.FirstOrDefaultAsync(x => isOrder != null && x.OrderId == isOrder.Id) ;
+            var ticket = await _context.Tickets.FirstOrDefaultAsync(x => x.OrderId == order.Id) ;
             
             if (ticket != null)
             {
@@ -302,7 +251,7 @@ public class OrderManager:IOrderManager
                 
             }
 
-            if (isOrder != null) _context.Orders.Remove(isOrder);
+            _context.Orders.Remove(order);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
         }
@@ -313,6 +262,7 @@ public class OrderManager:IOrderManager
         }
         
     }
+
 
     public async Task<Order>IsExist(Guid id)
     {
@@ -333,29 +283,12 @@ public class OrderManager:IOrderManager
         }
         
     }
+    
 
-    public async Task<bool> DoesCustomerExist(Guid id)
-    {
-        var entity = await _context.Customers.FindAsync(id);
-        return entity != null;
-    }
-
-    public async Task<Ticket> GetTicketById()
+    public async Task<Ticket> GetTicketById(Guid userGuid)
     {
         try
         {
-            var userId = _userHelper.UserId();
-
-            if (userId == null)
-            {
-                throw new UnauthorizedAccessException();
-            }
-
-            if (!Guid.TryParse(userId, out var userGuid))
-            {
-                throw new ArgumentException("Invalid UserId format.");
-            }
-
             var orders = await _context.Orders
                 .Include(x => x.Ticket)
                 .Where(x => x.CustomerId == userGuid)

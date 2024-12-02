@@ -89,7 +89,14 @@ public class OrderService: IOrderService
             {  
                 throw new UnauthorizedAccessException();
             }
-            return await _orderManager.GetOrders();
+
+            var orders = await _orderManager.DoesAnyOrdersExist();
+            if (orders == null || orders.Count == 0)
+            {
+                throw new ArgumentException("there are no orders!");
+            }
+
+            return await _orderManager.GetOrders(orders);
         }
         catch (Exception ex)
         {
@@ -103,9 +110,7 @@ public class OrderService: IOrderService
         try
         {
             var userId = _userHelper.UserId();
-            var isChef = _roleHelper.IsUserChef();
-            var isManager = _roleHelper.IsManagerUser();
-
+            
             if (userId == null)
             {
                 throw new UnauthorizedAccessException();
@@ -116,13 +121,13 @@ public class OrderService: IOrderService
                 throw new ArgumentException("Invalid UserId format.");
             }
 
-            var isCustomer = await _orderManager.DoesCustomerExist(userGuid);
-            if (isCustomer == false && !isChef && !isManager)
+            var order = await _orderManager.FindOrderById(userGuid);
+            if (order == null)
             {
-                throw new UnauthorizedAccessException("you can not get other users orders.");
+                throw new ArgumentException("There are no orders for this user!");
             }
 
-            return await _orderManager.GetOrderById();
+            return await _orderManager.GetOrderById(order);
 
         }
         catch (Exception ex)
@@ -134,16 +139,43 @@ public class OrderService: IOrderService
         
     }
 
-    public async Task UpdateOrder(Order order)
+    public async Task UpdateOrder(Order request)
     {
         try
         {
-            var isChef = _roleHelper.IsUserChef();
-            var isManager = _roleHelper.IsManagerUser();
-            if (!isChef && !isManager)
+            var userId = _userHelper.UserId();
+
+            if (!Guid.TryParse(userId, out var userGuid))
             {
-                throw new UnauthorizedAccessException("you are not allowed to update this order!");
+                throw new ArgumentException("Invalid UserId format.");
             }
+            var order = await _orderManager.FindOrderById(userGuid);
+            if (order == null)
+            {
+                throw new ArgumentException("There are no orders for this user!");
+            }
+
+            request.Id = order.Id;
+
+            var ticket = await _orderManager.FindTicket(order.Id);
+            if (ticket != null)
+            {
+                switch (request.StatusType)
+                {
+                    case Order.Status.Completed:
+                    case Order.Status.Delivered:
+                        ticket.TicketStatus = Ticket.Status.Served;
+                        break;
+                    case Order.Status.Cancelled:
+                        await _orderManager.RemoveTicket(ticket);
+                        break;
+                    case Order.Status.Delayed:
+                        ticket.TicketStatus = Ticket.Status.Delayed;
+                        ticket.IsFlagged = true;
+                        break;
+                }
+            }
+            order.StatusType = request.StatusType;
 
             await _orderManager.UpdateOrder(order);
         }
@@ -155,9 +187,36 @@ public class OrderService: IOrderService
 
     }
 
-    public Task DeleteOrder()
+    public async Task DeleteOrder()
     {
-        return _orderManager.DeleteOrder();
+        try
+        {
+            var userId = _userHelper.UserId();
+
+            if (userId == null)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                throw new ArgumentException("Invalid UserId format.");
+            }
+
+            var order = await _orderManager.GetOrderById(userGuid);
+            if (order == null)
+            {
+                throw new ArgumentException("There are no orders for this user!");
+            }
+
+            await _orderManager.DeleteOrder(order);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            throw;
+        }
+        
     }
 
     public Task<Order> IsExist(Guid id)
@@ -167,6 +226,27 @@ public class OrderService: IOrderService
 
     public async Task<Ticket> GetTicketById()
     {
-        return await _orderManager.GetTicketById();
+        try
+        {
+            var userId = _userHelper.UserId();
+
+            if (userId == null)
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                throw new ArgumentException("Invalid UserId format.");
+            }
+
+            return await _orderManager.GetTicketById(userGuid);
+
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message);
+            throw;
+        }
     }
 }

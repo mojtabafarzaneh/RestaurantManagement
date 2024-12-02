@@ -19,16 +19,16 @@ public class AuthManager: IAuthManager
     private readonly IMapper _mapper;
     private readonly IConfiguration _config;
     private readonly RoleManager<RestaurantRoles> _roleManager;
-    private readonly RoleService _roleService;
-    private readonly UserService _userService;
+    private readonly RoleHelper _roleHelper;
+    private readonly UserHelper _userHelper;
     private Customer _customer;
 
-    public AuthManager(UserManager<Customer> userManager, IMapper mapper, IConfiguration config, RoleManager<RestaurantRoles> roleManager, RoleService roleService, UserService userService)
+    public AuthManager(UserManager<Customer> userManager, IMapper mapper, IConfiguration config, RoleManager<RestaurantRoles> roleManager, RoleHelper roleHelper, UserHelper userHelper)
     {
         _config = config;
         _roleManager = roleManager;
-        _roleService = roleService;
-        _userService = userService;
+        _roleHelper = roleHelper;
+        _userHelper = userHelper;
         _userManager = userManager;
         _mapper = mapper;
     }
@@ -136,7 +136,7 @@ public class AuthManager: IAuthManager
 
     public async Task ChangeCustomerRole(ChangeUserRoleRequest request)
     {
-        var authorizedUser = _roleService.IsAdminUser();
+        var authorizedUser = _roleHelper.IsAdminUser();
         if (!authorizedUser)
         {
             throw new UnauthorizedAccessException();
@@ -177,7 +177,7 @@ public class AuthManager: IAuthManager
 
     public async Task<CustomerResponse> Me()
     {
-        var bearerResult = _userService.UserId();
+        var bearerResult = _userHelper.UserId();
         if (bearerResult is null)
         {
             throw new UnauthorizedAccessException();

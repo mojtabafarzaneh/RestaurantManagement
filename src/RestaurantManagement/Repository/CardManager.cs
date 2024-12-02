@@ -7,22 +7,22 @@ namespace RestaurantManagement.Repository;
 public class CardManager: ICardManager
 {
     private readonly ApplicationDBContex _context;
-    private readonly RoleService _roleService;
-    private readonly UserService _userService;
+    private readonly RoleHelper _roleHelper;
+    private readonly UserHelper _userHelper;
     private readonly ILogger<CardManager> _logger;
-    public CardManager(ApplicationDBContex context, UserService userService, RoleService roleService, ILogger<CardManager> logger)
+    public CardManager(ApplicationDBContex context, UserHelper userHelper, RoleHelper roleHelper, ILogger<CardManager> logger)
     {
         _context = context;
-        _userService = userService;
-        _roleService = roleService;
+        _userHelper = userHelper;
+        _roleHelper = roleHelper;
         _logger = logger;
     }
 
     public async Task<List<Card>> GetAllCardsAsync()
     {
-        var isChef = _roleService.IsUserChef();
-        var isManager = _roleService.IsManagerUser();
-        var isAdmin = _roleService.IsAdminUser();
+        var isChef = _roleHelper.IsUserChef();
+        var isManager = _roleHelper.IsManagerUser();
+        var isAdmin = _roleHelper.IsAdminUser();
         if (!isChef && !isManager && !isAdmin)
         {
             throw new UnauthorizedAccessException();
@@ -39,7 +39,7 @@ public class CardManager: ICardManager
     {
         try
         {
-            var isUser = _userService.UserId();
+            var isUser = _userHelper.UserId();
             if (isUser == null)
             {
                 throw new UnauthorizedAccessException();
@@ -65,7 +65,7 @@ public class CardManager: ICardManager
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try{
             
-            var userId = _userService.UserId();
+            var userId = _userHelper.UserId();
             if (userId == null)
             {
                 throw new NullReferenceException();
@@ -125,7 +125,7 @@ public class CardManager: ICardManager
     {
         try
         {
-            var userId = _userService.UserId();
+            var userId = _userHelper.UserId();
             if (userId == null)
             {
                 throw new UnauthorizedAccessException();
@@ -151,7 +151,7 @@ public class CardManager: ICardManager
     {
         try
         {
-            var userId = _userService.UserId();
+            var userId = _userHelper.UserId();
             if (userId == null)
             {
                 throw new UnauthorizedAccessException();
@@ -202,7 +202,7 @@ public class CardManager: ICardManager
     {
         try
         {
-            var userId = _userService.UserId();
+            var userId = _userHelper.UserId();
             if (userId == null)
             {
                 throw new UnauthorizedAccessException();
@@ -239,7 +239,7 @@ public class CardManager: ICardManager
     {
         try
         {
-            var userId = _userService.UserId();
+            var userId = _userHelper.UserId();
             if (userId == null)
             {
                 throw new UnauthorizedAccessException();
@@ -281,13 +281,13 @@ public class CardManager: ICardManager
     {
         try
         {
-            var userId = _userService.UserId();
+            var userId = _userHelper.UserId();
             if (userId == null)
             {
                 throw new UnauthorizedAccessException();
             }
 
-            var isChef = _roleService.IsUserChef();
+            var isChef = _roleHelper.IsUserChef();
             if (!isChef)
             {
                 if (!Guid.TryParse(userId, out var userGuid))
@@ -327,9 +327,9 @@ public class CardManager: ICardManager
     {
         try
         {
-            var isChef = _roleService.IsUserChef();
-            var isManager = _roleService.IsManagerUser();
-            var isAdmin = _roleService.IsAdminUser();
+            var isChef = _roleHelper.IsUserChef();
+            var isManager = _roleHelper.IsManagerUser();
+            var isAdmin = _roleHelper.IsAdminUser();
             if (!isChef && !isManager && !isAdmin)
             {
                 throw new UnauthorizedAccessException();

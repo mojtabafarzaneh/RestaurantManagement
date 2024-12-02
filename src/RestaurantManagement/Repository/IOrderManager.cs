@@ -5,7 +5,9 @@ namespace RestaurantManagement.Repository;
 
 public interface IOrderManager
 {
-    public Task CreateOrder(Order request);
+    public Task<bool> DoesUserHasOrdered(Guid id);
+    public Task<Card> DoesUserHasCard(Guid id);
+    public Task CreateOrder(Order request, Guid id, Card card, bool shouldMakeTicket);
     public Task<List<OrderResponse>> GetOrders();
     public Task<OrderResponse> GetOrderById();
     public Task UpdateOrder(Order order);

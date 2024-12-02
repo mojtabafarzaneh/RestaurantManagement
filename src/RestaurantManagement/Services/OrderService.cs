@@ -9,28 +9,37 @@ public class OrderService: IOrderService
 {
     private readonly IOrderManager _orderManager;
     private readonly ILogger<OrderService> _logger;
-    private readonly RoleService _roleService;
-    private readonly UserService _userService;
+    private readonly RoleHelper _roleHelper;
+    private readonly UserHelper _userHelper;
 
     public OrderService(IOrderManager orderManager,
         ILogger<OrderService> logger,
-        RoleService roleService, UserService userService)
+        RoleHelper roleHelper, UserHelper userHelper)
     {
         _orderManager = orderManager;
         _logger = logger;
-        _roleService = roleService;
-        _userService = userService;
+        _roleHelper = roleHelper;
+        _userHelper = userHelper;
     }
 
     public async Task CreateOrder(Order request)
     {
         try
         {
+            bool shouldMakeTicket = false; 
+            var userId = _userHelper.UserId();
+            if (userId == null)
+            {
+                throw new UnauthorizedAccessException();
+            }
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                throw new ArgumentException("Invalid UserId format.");
+            }
             if (request.TypeOfOrder == 0)
             {
                 throw new ArgumentException("Type of order cannot be empty");
             }
-
             if (request.TableNumber is > 10 or < 0 ||
                 request is { TypeOfOrder: Order.OrderType.InHouse, TableNumber: null })
             {
@@ -42,8 +51,26 @@ public class OrderService: IOrderService
             {
                 throw new ArgumentException("This order cannot have a table number");
             }
+            
+            var card = await _orderManager.DoesUserHasCard(userGuid);
+            if (await _orderManager.DoesUserHasOrdered(userGuid))
+            {
+                throw new ArgumentException("This user has already ordered");
+            }
+            request.CustomerId = userGuid;
+            request.StatusType = request.TypeOfOrder switch
+            {
+                Order.OrderType.Delivery or Order.OrderType.Online => Order.Status.Pending,
+                Order.OrderType.InHouse => Order.Status.Preparing,
+                _ => request.StatusType 
+            };
 
-            await _orderManager.CreateOrder(request);
+            if (request.StatusType == Order.Status.Preparing)
+            {
+                shouldMakeTicket = true;
+            }
+
+            await _orderManager.CreateOrder(request, userGuid, card, shouldMakeTicket);
         }
         catch (Exception ex)
         {
@@ -56,8 +83,8 @@ public class OrderService: IOrderService
     {
         try
         {
-            var isChef = _roleService.IsUserChef();
-            var isManager = _roleService.IsManagerUser();
+            var isChef = _roleHelper.IsUserChef();
+            var isManager = _roleHelper.IsManagerUser();
             if (!isChef && !isManager)
             {  
                 throw new UnauthorizedAccessException();
@@ -75,9 +102,9 @@ public class OrderService: IOrderService
     {
         try
         {
-            var userId = _userService.UserId();
-            var isChef = _roleService.IsUserChef();
-            var isManager = _roleService.IsManagerUser();
+            var userId = _userHelper.UserId();
+            var isChef = _roleHelper.IsUserChef();
+            var isManager = _roleHelper.IsManagerUser();
 
             if (userId == null)
             {
@@ -111,8 +138,8 @@ public class OrderService: IOrderService
     {
         try
         {
-            var isChef = _roleService.IsUserChef();
-            var isManager = _roleService.IsManagerUser();
+            var isChef = _roleHelper.IsUserChef();
+            var isManager = _roleHelper.IsManagerUser();
             if (!isChef && !isManager)
             {
                 throw new UnauthorizedAccessException("you are not allowed to update this order!");

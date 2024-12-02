@@ -1,10 +1,10 @@
 namespace RestaurantManagement.Helper;
 
-public class UserService
+public class UserHelper
 {
     private readonly IHttpContextAccessor _ContextAccessor;
 
-    public UserService(IHttpContextAccessor contextAccessor)
+    public UserHelper(IHttpContextAccessor contextAccessor)
     {
         _ContextAccessor = contextAccessor;
     }

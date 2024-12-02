@@ -8,19 +8,19 @@ namespace RestaurantManagement.Repository;
 public class MenuManager: IMenuManager
 {
     private readonly ApplicationDBContex _context;
-    private readonly RoleService _roleService;
+    private readonly RoleHelper _roleHelper;
     private readonly ILogger<MenuManager> _logger;
     
-    public MenuManager(ApplicationDBContex context, RoleService roleService, ILogger<MenuManager> logger)
+    public MenuManager(ApplicationDBContex context, RoleHelper roleHelper, ILogger<MenuManager> logger)
     {
         _context = context;
-        _roleService = roleService;
+        _roleHelper = roleHelper;
         _logger = logger;
     }
 
     public async Task<List<Menu>> GetAllMenus()
     {
-        var isChef = _roleService.IsUserChef();
+        var isChef = _roleHelper.IsUserChef();
         if (!isChef)
         {
             throw new Exception("You Are not Permitted to use this route!");
@@ -33,7 +33,7 @@ public class MenuManager: IMenuManager
 
     public async Task<Menu> CreateMenu(Menu request)
     {
-        var isChef = _roleService.IsUserChef();
+        var isChef = _roleHelper.IsUserChef();
         if (!isChef)
         {
             throw new UnauthorizedAccessException($"{isChef} is not allowed to use this route!");
@@ -64,7 +64,7 @@ public class MenuManager: IMenuManager
 
     public async Task<Menu> GetMenuById(Guid id)
     {
-        var isChef = _roleService.IsUserChef();
+        var isChef = _roleHelper.IsUserChef();
         if (!isChef)
         {
             throw new Exception("You Are not Permitted to use this route!");
@@ -88,7 +88,7 @@ public class MenuManager: IMenuManager
     {
         try
         {
-            var isChef = _roleService.IsUserChef();
+            var isChef = _roleHelper.IsUserChef();
             if (!isChef)
             {
                 throw new UnauthorizedAccessException("You Are not Permitted to use this route!");
@@ -116,7 +116,7 @@ public class MenuManager: IMenuManager
     {
         try
         {
-            var isChef = _roleService.IsUserChef();
+            var isChef = _roleHelper.IsUserChef();
             if (!isChef)
             {
                 throw new Exception("You Are not Permitted to use this route!");

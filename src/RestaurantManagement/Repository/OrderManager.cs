@@ -11,57 +11,47 @@ namespace RestaurantManagement.Repository;
 public class OrderManager:IOrderManager
 {
     private readonly ApplicationDBContex _context;
-    private readonly RoleService _roleService;
-    private readonly UserService _userService;
+    private readonly RoleHelper _roleHelper;
+    private readonly UserHelper _userHelper;
     private readonly TicketProducer _ticketProducer;
     private readonly IMapper _mapper;
     private readonly ILogger<OrderManager> _logger;
 
-    public OrderManager(ApplicationDBContex context, RoleService roleService, UserService userService, IMapper mapper, TicketProducer ticketProducer, ILogger<OrderManager> logger)
+    public OrderManager(ApplicationDBContex context, RoleHelper roleHelper, UserHelper userHelper, IMapper mapper, TicketProducer ticketProducer, ILogger<OrderManager> logger)
     {
         _context = context;
-        _roleService = roleService;
-        _userService = userService;
+        _roleHelper = roleHelper;
+        _userHelper = userHelper;
         _mapper = mapper;
         _ticketProducer = ticketProducer;
         _logger = logger;
     }
 
-    public async Task CreateOrder(Order request)
+    public async Task<Card> DoesUserHasCard(Guid id)
+    {
+        var card = await _context.Cards.FirstOrDefaultAsync(x=> x.CustomerId == id);
+        if (card == null)
+        {
+            throw new UnauthorizedAccessException("you can not create an order for this user.");
+        }
+
+        return card;
+    }
+
+    public async Task<bool> DoesUserHasOrdered(Guid id)
+    {
+        var doesOrdered = await _context.Orders.Where(x => x.CustomerId == id).AnyAsync();
+        return doesOrdered;
+    }
+
+    public async Task CreateOrder(Order request, Guid id, Card card, bool shouldMakeTicket)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
 
         try {
-                var userId = _userService.UserId();
-                if (userId == null)
-                {
-                    throw new UnauthorizedAccessException();
-                }
-                if (!Guid.TryParse(userId, out var userGuid))
-                {
-                    throw new ArgumentException("Invalid UserId format.");
-                }
-                var card = await _context.Cards.FirstOrDefaultAsync(x=> x.CustomerId == userGuid);
-                if (card == null)
-                {
-                    throw new UnauthorizedAccessException("you can not create an order for this user.");
-                }
-                request.CustomerId = userGuid;
-                request.StatusType = request.TypeOfOrder switch
-                {
-                    Order.OrderType.Delivery or Order.OrderType.Online => Order.Status.Pending,
-                    Order.OrderType.InHouse => Order.Status.Preparing,
-                    _ => request.StatusType 
-                };
-        
-                if (await _context.Orders.Where(x => x.CustomerId == userGuid).AnyAsync())
-                {
-                    throw new Exception("This user has already ordered");
-                }
-
                 var order = await _context.Orders.AddAsync(request);
                 await _context.SaveChangesAsync();
-                if (order.Entity.StatusType == Order.Status.Preparing)
+                if (shouldMakeTicket)
                 { 
                     var ticket = new Ticket 
                     {
@@ -158,7 +148,7 @@ public class OrderManager:IOrderManager
     {
         try
         {
-            var userId = _userService.UserId();
+            var userId = _userHelper.UserId();
 
             if (userId == null)
             {
@@ -210,7 +200,7 @@ public class OrderManager:IOrderManager
     {
         try
         {
-            var userId = _userService.UserId();
+            var userId = _userHelper.UserId();
 
             if (!Guid.TryParse(userId, out var userGuid))
             {
@@ -269,9 +259,9 @@ public class OrderManager:IOrderManager
 
         try
         {
-            var userId = _userService.UserId();
-            var isChef = _roleService.IsUserChef();
-            var isManager = _roleService.IsManagerUser();
+            var userId = _userHelper.UserId();
+            var isChef = _roleHelper.IsUserChef();
+            var isManager = _roleHelper.IsManagerUser();
 
             if (userId == null)
             {
@@ -354,7 +344,7 @@ public class OrderManager:IOrderManager
     {
         try
         {
-            var userId = _userService.UserId();
+            var userId = _userHelper.UserId();
 
             if (userId == null)
             {

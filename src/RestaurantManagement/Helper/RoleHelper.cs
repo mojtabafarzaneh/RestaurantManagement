@@ -2,11 +2,11 @@ using System.Security.Claims;
 
 namespace RestaurantManagement.Helper;
 
-public class RoleService
+public class RoleHelper
 {
     private readonly IHttpContextAccessor _ContextAccessor;
 
-    public RoleService(IHttpContextAccessor contextAccessor)
+    public RoleHelper(IHttpContextAccessor contextAccessor)
     {
         _ContextAccessor = contextAccessor;
     }

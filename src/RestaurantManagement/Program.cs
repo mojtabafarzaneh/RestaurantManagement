@@ -60,8 +60,8 @@ builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMenuService, MenuService>();
-builder.Services.AddScoped<RoleService>();
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<RoleHelper>();
+builder.Services.AddScoped<UserHelper>();
 
 builder.Services.AddHostedService<TicketConsumerService>();
 

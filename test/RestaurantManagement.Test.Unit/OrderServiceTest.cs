@@ -222,9 +222,348 @@ public class OrderTest
         // Assert
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("there are no orders!");
     }
-    
-    
 
+    [Fact]
+    public async Task GetOrderById_ShouldThrowUnauthorizedAccessException_whenUserIdIsNull()
+    {
+        var context = _fixture.CreateHttpContextAccessor("", "testuser@example.com", "Customer");
+        var roleHelper = new RoleHelper(context);
+        var userHelper = new UserHelper(context);
+        var orderService = new OrderService(_orderManager, _logger, roleHelper, userHelper);
+
+        Func<Task> act = async () => await orderService.GetOrderById();
+        
+        await act.Should().ThrowAsync<UnauthorizedAccessException>();
+    }
+
+    [Fact]
+    public async Task GetOrderById_ShouldThrowArgumentException_whenUserHadNotOrdered()
+    {
+        _orderManager.DoesUserHasOrdered(Arg.Any<Guid>()).Returns(false);
+        
+        Func<Task> act = async () => await _orderService.GetOrderById();
+        
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("There are no orders for this user!");
+        
+    }
+
+    [Fact]
+    public async Task GetOrderById_ShouldReturnOrderResponse_WhenOrderExists()
+    {
+        // Arrange
+        var validUserId = Guid.NewGuid().ToString();
+        var userGuid = Guid.Parse(validUserId);
+        var context = _fixture.CreateHttpContextAccessor(
+            userId: validUserId, "email@email.com", "Customer");
+        var userHelper = new UserHelper(context);
+        var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+        var order = new Order
+        {
+            Id = Guid.NewGuid(),
+        };
+        var orderResponse = new OrderResponse
+        {
+            Id = order.Id.ToString(),
+        };
+
+        _orderManager.FindOrderById(userGuid).Returns(order);
+        _orderManager.GetOrderById(order).Returns(orderResponse);
+
+        // Act
+        var result = await orderService.GetOrderById();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Id.Should().Be(order.Id.ToString());
+    }
+    
+    [Fact]
+public async Task UpdateOrder_ShouldThrowArgumentException_WhenUserIdIsInvalid()
+{
+    // Arrange
+    var invalidUserId = "invalid-guid";
+    var context = _fixture.CreateHttpContextAccessor(userId: invalidUserId, "email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+    var request = new Order();
+
+    // Act & Assert
+    await Assert.ThrowsAsync<ArgumentException>(() => orderService.UpdateOrder(request));
+}
+
+[Fact]
+public async Task UpdateOrder_ShouldThrowArgumentException_WhenOrderNotFound()
+{
+    // Arrange
+    var validUserId = Guid.NewGuid().ToString();
+    var context = _fixture.CreateHttpContextAccessor(userId: validUserId, "email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+    var request = new Order();
+
+    _orderManager.FindOrderById(Arg.Any<Guid>()).Returns((Order)null);
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<ArgumentException>(() => orderService.UpdateOrder(request));
+    exception.Message.Should().Be("There are no orders for this user!");
+}
+
+[Fact]
+public async Task UpdateOrder_ShouldUpdateOrderAndRemoveTicket_WhenStatusCancelled()
+{
+    // Arrange
+    var validUserId = Guid.NewGuid().ToString();
+    var userGuid = Guid.Parse(validUserId);
+    var context = _fixture.CreateHttpContextAccessor(userId: validUserId, "email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    var order = new Order
+    {
+        Id = Guid.NewGuid(),
+        StatusType = Order.Status.Pending
+    };
+
+    var ticket = new Ticket
+    {
+        Id = Guid.NewGuid(),
+        TicketStatus = Ticket.Status.Waiting
+    };
+
+    _orderManager.FindOrderById(userGuid).Returns(order);
+    _orderManager.FindTicket(order.Id).Returns(ticket);
+
+    var request = new Order
+    {
+        StatusType = Order.Status.Cancelled
+    };
+
+    // Act
+    await orderService.UpdateOrder(request);
+
+    // Assert
+    await _orderManager.Received(1).RemoveTicket(ticket);
+    await _orderManager.Received(1).UpdateOrder(order);
+    order.StatusType.Should().Be(Order.Status.Cancelled);
+}
+
+[Fact]
+public async Task UpdateOrder_ShouldUpdateTicketAndOrder_WhenStatusDelayed()
+{
+    // Arrange
+    var validUserId = Guid.NewGuid().ToString();
+    var userGuid = Guid.Parse(validUserId);
+    var context = _fixture.CreateHttpContextAccessor(userId: validUserId, "email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    var order = new Order
+    {
+        Id = Guid.NewGuid(),
+        StatusType = Order.Status.Pending
+    };
+
+    var ticket = new Ticket
+    {
+        Id = Guid.NewGuid(),
+        TicketStatus = Ticket.Status.Waiting,
+        IsFlagged = false
+    };
+
+    _orderManager.FindOrderById(userGuid).Returns(order);
+    _orderManager.FindTicket(order.Id).Returns(ticket);
+
+    var request = new Order
+    {
+        StatusType = Order.Status.Delayed
+    };
+
+    // Act
+    await orderService.UpdateOrder(request);
+
+    // Assert
+    ticket.TicketStatus.Should().Be(Ticket.Status.Delayed);
+    ticket.IsFlagged.Should().BeTrue();
+    order.StatusType.Should().Be(Order.Status.Delayed);
+    await _orderManager.Received(1).UpdateOrder(order);
+}
+
+[Fact]
+public async Task UpdateOrder_ShouldUpdateTicketAndOrder_WhenStatusCompleted()
+{
+    // Arrange
+    var validUserId = Guid.NewGuid().ToString();
+    var userGuid = Guid.Parse(validUserId);
+    var context = _fixture.CreateHttpContextAccessor(userId: validUserId, "email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    var order = new Order
+    {
+        Id = Guid.NewGuid(),
+        StatusType = Order.Status.Preparing
+    };
+
+    var ticket = new Ticket
+    {
+        Id = Guid.NewGuid(),
+        TicketStatus = Ticket.Status.Waiting
+    };
+
+    _orderManager.FindOrderById(userGuid).Returns(order);
+    _orderManager.FindTicket(order.Id).Returns(ticket);
+
+    var request = new Order
+    {
+        StatusType = Order.Status.Completed
+    };
+
+    // Act
+    await orderService.UpdateOrder(request);
+
+    // Assert
+    ticket.TicketStatus.Should().Be(Ticket.Status.Served);
+    order.StatusType.Should().Be(Order.Status.Completed);
+    await _orderManager.Received(1).UpdateOrder(order);
+}
+[Fact]
+public async Task DeleteOrder_ShouldThrowUnauthorizedAccessException_WhenUserIdIsNull()
+{
+    // Arrange
+    var context = _fixture.CreateHttpContextAccessor(userId: "", "email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    // Act & Assert
+    await Assert.ThrowsAsync<UnauthorizedAccessException>(() => orderService.DeleteOrder());
+}
+
+[Fact]
+public async Task DeleteOrder_ShouldThrowArgumentException_WhenUserIdIsInvalid()
+{
+    // Arrange
+    var invalidUserId = "invalid-guid";
+    var context = _fixture.CreateHttpContextAccessor(userId: invalidUserId, "email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<ArgumentException>(() => orderService.DeleteOrder());
+    exception.Message.Should().Be("Invalid UserId format.");
+}
+
+[Fact]
+public async Task DeleteOrder_ShouldThrowArgumentException_WhenOrderNotFound()
+{
+    // Arrange
+    var validUserId = Guid.NewGuid().ToString();
+    var context = _fixture.CreateHttpContextAccessor(userId: validUserId,"email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    _orderManager.GetOrderById(Arg.Any<Guid>()).Returns((Order)null);
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<ArgumentException>(() => orderService.DeleteOrder());
+    exception.Message.Should().Be("There are no orders for this user!");
+}
+
+[Fact]
+public async Task DeleteOrder_ShouldDeleteOrder_WhenOrderExists()
+{
+    // Arrange
+    var validUserId = Guid.NewGuid().ToString();
+    var userGuid = Guid.Parse(validUserId);
+    var context = _fixture.CreateHttpContextAccessor(userId: validUserId, "email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    var order = new Order
+    {
+        Id = Guid.NewGuid(),
+        StatusType = Order.Status.Pending
+    };
+
+    _orderManager.GetOrderById(userGuid).Returns(order);
+
+    // Act
+    await orderService.DeleteOrder();
+
+    // Assert
+    await _orderManager.Received(1).DeleteOrder(order);
+}
+[Fact]
+public async Task GetTicketById_ShouldThrowUnauthorizedAccessException_WhenUserIdIsNull()
+{
+    // Arrange
+    var context = _fixture.CreateHttpContextAccessor(userId: "","email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    // Act & Assert
+    await Assert.ThrowsAsync<UnauthorizedAccessException>(() => orderService.GetTicketById());
+}
+
+[Fact]
+public async Task GetTicketById_ShouldThrowArgumentException_WhenUserIdIsInvalid()
+{
+    // Arrange
+    var invalidUserId = "invalid-guid";
+    var context = _fixture.CreateHttpContextAccessor(userId: invalidUserId,"email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<ArgumentException>(() => orderService.GetTicketById());
+    exception.Message.Should().Be("Invalid UserId format.");
+}
+
+[Fact]
+public async Task GetTicketById_ShouldReturnNull_WhenTicketDoesNotExist()
+{
+    // Arrange
+    var validUserId = Guid.NewGuid().ToString();
+    var userGuid = Guid.Parse(validUserId);
+    var context = _fixture.CreateHttpContextAccessor(userId: validUserId,"email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    _orderManager.GetTicketById(userGuid).Returns((Ticket)null);
+
+    // Act
+    var result = await orderService.GetTicketById();
+
+    // Assert
+    result.Should().BeNull();
+}
+
+[Fact]
+public async Task GetTicketById_ShouldReturnTicket_WhenTicketExists()
+{
+    // Arrange
+    var validUserId = Guid.NewGuid().ToString();
+    var userGuid = Guid.Parse(validUserId);
+    var context = _fixture.CreateHttpContextAccessor(userId: validUserId, "email@email.com", "Customer");
+    var userHelper = new UserHelper(context);
+    var orderService = new OrderService(_orderManager, _logger, _roleHelper, userHelper);
+
+    var ticket = new Ticket
+    {
+        Id = Guid.NewGuid(),
+        TicketStatus = Ticket.Status.Waiting
+    };
+
+    _orderManager.GetTicketById(userGuid).Returns(ticket);
+
+    // Act
+    var result = await orderService.GetTicketById();
+
+    // Assert
+    result.Should().NotBeNull();
+    result.Should().BeEquivalentTo(ticket);
+}
 
 }
 

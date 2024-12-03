@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
+using RestaurantManagement.Models;
 
 namespace RestaurantManagement.Services;
 
@@ -11,5 +12,5 @@ public interface IAuthService
     Task<AuthCustomerResponse> VerifyRefreshToken(AuthCustomerResponse request);
     Task ChangeCustomerRole(ChangeUserRoleRequest request);
 
-    Task<CustomerResponse> Me();
+    Task<Customer> Me();
 }

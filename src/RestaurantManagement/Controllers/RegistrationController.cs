@@ -87,7 +87,8 @@ public class RegistrationController: ControllerBase
     [Authorize]
     public async Task<IActionResult> Me()
     {
-        var response = await _authService.Me();
+        var me = await _authService.Me();
+        var response = _mapper.Map<CustomerResponse>(me);
         
         return Ok(response);
     }

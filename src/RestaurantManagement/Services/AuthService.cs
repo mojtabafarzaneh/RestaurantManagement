@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Helper;
+using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
 
 namespace RestaurantManagement.Services;
@@ -14,7 +15,11 @@ public class AuthService: IAuthService
     private readonly RoleHelper _roleHelper;
     private readonly UserHelper _userHelper;
 
-    public AuthService(IAuthManager authManager, ILogger<AuthService> logger, RoleHelper roleHelper, UserHelper userHelper)
+    public AuthService(
+        IAuthManager authManager, 
+        ILogger<AuthService> logger, 
+        RoleHelper roleHelper,
+        UserHelper userHelper)
     {
         _authManager = authManager;
         _logger = logger;
@@ -54,7 +59,7 @@ public class AuthService: IAuthService
             {
                 throw new UnauthorizedAccessException("Invalid username or password");
             }
-            return await _authManager.Login(request);
+            return await _authManager.Login(customer);
         }
         catch (Exception)
         {
@@ -86,7 +91,7 @@ public class AuthService: IAuthService
                 throw new UnauthorizedAccessException("Invalid refresh token");
             }
                 
-            return await _authManager.VerifyRefreshToken(request);
+            return await _authManager.VerifyRefreshToken(customer);
         }
         catch (Exception)
         {
@@ -132,7 +137,7 @@ public class AuthService: IAuthService
         }
     }
 
-    public async Task<CustomerResponse> Me()
+    public async Task<Customer> Me()
     {
         try
         {
@@ -141,13 +146,17 @@ public class AuthService: IAuthService
             {
                 throw new UnauthorizedAccessException();
             }
-            var customer = await _authManager.DoesCustomerExist(userId);
+            if (!Guid.TryParse(userId, out var userGuid))
+            {
+                throw new ArgumentException("Invalid UserId format.");
+            }
+            var customer = await _authManager.DoesCustomerExist(userGuid);
             if (customer is null)
             {
                 throw new UnauthorizedAccessException();
             }
             
-            return await _authManager.Me(customer);
+            return customer;
         }
         catch (Exception)
         {

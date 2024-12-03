@@ -8,7 +8,6 @@ using Microsoft.IdentityModel.Tokens;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
 using RestaurantManagement.Models;
-using RestaurantManagement.Helper;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
 namespace RestaurantManagement.Repository;
@@ -19,16 +18,11 @@ public class AuthManager: IAuthManager
     private readonly IMapper _mapper;
     private readonly IConfiguration _config;
     private readonly RoleManager<RestaurantRoles> _roleManager;
-    private readonly RoleHelper _roleHelper;
-    private readonly UserHelper _userHelper;
-    private Customer _customer;
 
-    public AuthManager(UserManager<Customer> userManager, IMapper mapper, IConfiguration config, RoleManager<RestaurantRoles> roleManager, RoleHelper roleHelper, UserHelper userHelper)
+    public AuthManager(UserManager<Customer> userManager, IMapper mapper, IConfiguration config, RoleManager<RestaurantRoles> roleManager)
     {
         _config = config;
         _roleManager = roleManager;
-        _roleHelper = roleHelper;
-        _userHelper = userHelper;
         _userManager = userManager;
         _mapper = mapper;
     }
@@ -60,55 +54,59 @@ public class AuthManager: IAuthManager
         return await _userManager.CheckPasswordAsync(customer, password);
     }
 
-    public async Task<AuthCustomerResponse> Login(LoginRequest request)
+    public async Task<AuthCustomerResponse> Login(Customer customer)
     {
-        var token = await GenerateJwtToken();
+        var token = await GenerateJwtToken(customer);
         return new AuthCustomerResponse
         {
             Token = token,
-            CustomerId = _customer.Id,
-            RefreshToken = await GenerateRefreshToken(),
+            CustomerId = customer.Id,
+            RefreshToken = await GenerateRefreshToken(customer),
         };
     }
 
-    private async Task<string> GenerateJwtToken()
+    private async Task<string> GenerateJwtToken(Customer customer)
     {
         var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? string.Empty));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-        
-        var roles = await _userManager.GetRolesAsync(_customer);
+
+        var roles = await _userManager.GetRolesAsync(customer);
         var roleClaims = roles.Select(x => new Claim(ClaimTypes.Role, x)).ToList();
-        var userClaims = await _userManager.GetClaimsAsync(_customer);
+        var userClaims = await _userManager.GetClaimsAsync(customer);
 
-        var claims = new List<Claim>
+        if (customer.Email != null)
         {
-            new Claim(JwtRegisteredClaimNames.Sub, _customer.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, _customer.Email),
-            new Claim("uid", _customer.Id.ToString())
-        }.Union(userClaims).Union(roleClaims);
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, customer.Email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, customer.Email),
+                new Claim("uid", customer.Id.ToString())
+            }.Union(userClaims).Union(roleClaims);
 
-        var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddMinutes(Convert.ToInt32(_config["Jwt:DurationInMinutes"])),
-            signingCredentials: credentials
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(Convert.ToInt32(_config["Jwt:DurationInMinutes"])),
+                signingCredentials: credentials
             );
-        
-        return new JwtSecurityTokenHandler().WriteToken(token);
 
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        return null!;
     }
 
-    private async Task<string> GenerateRefreshToken()
+    private async Task<string> GenerateRefreshToken(Customer customer)
     {
         await _userManager.RemoveAuthenticationTokenAsync(
-            _customer, "RestaurantManagement", "RefreshToken");
+            customer, "RestaurantManagement", "RefreshToken");
         
         var newRefreshToken = await _userManager.GenerateUserTokenAsync(
-            _customer, "RestaurantManagementApi", "RefreshToken");
-        var result = await _userManager.SetAuthenticationTokenAsync(
-            _customer, "RestaurantManagementApi", "RefreshToken", newRefreshToken);
+            customer, "RestaurantManagementApi", "RefreshToken");
+        await _userManager.SetAuthenticationTokenAsync(
+            customer, "RestaurantManagementApi", "RefreshToken", newRefreshToken);
 
         return newRefreshToken;
     }
@@ -121,14 +119,14 @@ public class AuthManager: IAuthManager
     }
     
 
-    public async Task<AuthCustomerResponse> VerifyRefreshToken(AuthCustomerResponse request)
+    public async Task<AuthCustomerResponse> VerifyRefreshToken(Customer customer)
     {
-        var token = await GenerateJwtToken();
+        var token = await GenerateJwtToken(customer);
         return new AuthCustomerResponse
         {
             Token = token,
-            CustomerId = _customer.Id,
-            RefreshToken = await GenerateRefreshToken(),
+            CustomerId = customer.Id,
+            RefreshToken = await GenerateRefreshToken(customer),
         };
     }
 
@@ -192,12 +190,5 @@ public class AuthManager: IAuthManager
             throw new ArgumentException("Failed to add users new role");
         }
     }
-
-    public async Task<CustomerResponse> Me(Customer customer)
-    {
-        var resultCustomer = _mapper.Map<CustomerResponse>(customer);
-
-        return resultCustomer;
-
-    }
+    
 }

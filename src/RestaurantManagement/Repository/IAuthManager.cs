@@ -9,8 +9,8 @@ namespace RestaurantManagement.Repository;
 public interface IAuthManager
 {
     Task<IEnumerable<IdentityError>> Register(RegisterRequest request);
-    Task<AuthCustomerResponse> Login(LoginRequest request);
-    Task<AuthCustomerResponse> VerifyRefreshToken(AuthCustomerResponse request);
+    Task<AuthCustomerResponse> Login(Customer customer);
+    Task<AuthCustomerResponse> VerifyRefreshToken(Customer customer);
     Task ChangeCustomerRole(ChangeUserRoleRequest request, Customer customer);
     public Task<IList<string>?> GetCustomerRoles(Customer customer, string role);
     public Task RemoveCurrentRole(Customer customer, IEnumerable<string> role);
@@ -22,5 +22,5 @@ public interface IAuthManager
 
     public Task<bool> DoesTokenExist(AuthCustomerResponse request, Customer customer);
 
-    Task<CustomerResponse> Me(Customer customer);
+
 }

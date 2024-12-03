@@ -20,25 +20,19 @@ public class MenuManager: IMenuManager
 
     public async Task<List<Menu>> GetAllMenus()
     {
-        var isChef = _roleHelper.IsUserChef();
-        if (!isChef)
-        {
-            throw new Exception("You Are not Permitted to use this route!");
-        }
-
         var result = await _context.Menus.ToListAsync();
         
         return result;
     }
 
+    public async Task<bool> DoesMenuExist(string name)
+    {
+        return await _context.Menus.AnyAsync(x => x.Name == name);
+        
+    }
+
     public async Task<Menu> CreateMenu(Menu request)
     {
-        var isChef = _roleHelper.IsUserChef();
-        if (!isChef)
-        {
-            throw new UnauthorizedAccessException($"{isChef} is not allowed to use this route!");
-        }
-        
         var create = await _context.Menus.AddAsync(request);
         if (create is null || create.State == EntityState.Detached)
         {
@@ -49,58 +43,27 @@ public class MenuManager: IMenuManager
         {
             throw new ArgumentException("the menu already exists!");
         }
-
-        if (create.Entity.QuantityAvailable != null && create.Entity.QuantityAvailable.Value == 0)
-        {
-            create.Entity.Available = false;
-        }
-        else
-        {
-            create.Entity.Available = true;
-        }
+        
         await _context.SaveChangesAsync();
         return create.Entity;
     }
 
     public async Task<Menu> GetMenuById(Guid id)
     {
-        var isChef = _roleHelper.IsUserChef();
-        if (!isChef)
-        {
-            throw new Exception("You Are not Permitted to use this route!");
-        }
-
-        if (id == Guid.Empty)
-        {
-            throw new Exception("Menu could not be found!");
-        }
-        
-        var result =await _context.Menus.FindAsync(id);
+        var result =await _context.Menus.Where (x => x.Id == id).FirstOrDefaultAsync();
         if (result is null)
         {
-            throw new Exception();
+            throw new ArgumentException("the menu does not exist!");
         }
         
         return result;
     }
 
-    public async Task DeleteMenuById(Guid id)
+    public async Task DeleteMenuById(Menu menu)
     {
         try
         {
-            var isChef = _roleHelper.IsUserChef();
-            if (!isChef)
-            {
-                throw new UnauthorizedAccessException("You Are not Permitted to use this route!");
-            }
-
-            var isExist = await GetMenuById(id);
-            if (isExist is null)
-            {
-                throw new ArgumentException($"Menu {id} not found!");
-            }
-
-            _context.Menus.Remove(isExist);
+            _context.Menus.Remove(menu);
             await _context.SaveChangesAsync();
         }
         catch (Exception e)
@@ -116,12 +79,6 @@ public class MenuManager: IMenuManager
     {
         try
         {
-            var isChef = _roleHelper.IsUserChef();
-            if (!isChef)
-            {
-                throw new Exception("You Are not Permitted to use this route!");
-            }
-
             _context.Menus.Update(request);
             await _context.SaveChangesAsync();
         }

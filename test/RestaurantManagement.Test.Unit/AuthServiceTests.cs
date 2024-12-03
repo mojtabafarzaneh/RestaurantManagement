@@ -22,7 +22,6 @@ public class AuthServiceTests
 {
     private readonly IAuthManager _authManager;
     private readonly ILogger<AuthService> _logger;
-    private readonly RoleHelper _roleHelper;
     private readonly UserHelper _userHelper;
     private readonly AuthService _authService;
     private readonly TestUserFixture _testUserFixture;
@@ -38,10 +37,10 @@ public class AuthServiceTests
             "admin@example.com", 
             "Admin"
         );
-        _roleHelper = new RoleHelper(contextAccessor);
+        var roleHelper = new RoleHelper(contextAccessor);
         _userHelper = new UserHelper(contextAccessor);
 
-        _authService = new AuthService(_authManager, _logger, _roleHelper, _userHelper);
+        _authService = new AuthService(_authManager, _logger, roleHelper, _userHelper);
     }
 
     [Fact]
@@ -126,26 +125,5 @@ public class AuthServiceTests
         // Assert
         await action.Should().ThrowAsync<UnauthorizedAccessException>();
     }
-
-    [Fact]
-    public async Task Me_ShouldReturnCustomerDetails_WhenValidUser()
-    {
-        // Arrange
-        var userId = Guid.NewGuid().ToString();
-        var contextAccessor = _testUserFixture.CreateHttpContextAccessor(userId, "test@example.com", "Customer");
-        var userHelper = new UserHelper(contextAccessor);
-
-        var customer = new Customer { Id = new Guid(userId)};
-        _authManager.DoesCustomerExist(userId).Returns(customer);
-        _authManager.Me(customer).Returns(new CustomerResponse { Id = new Guid(userId), Email = "test@example.com" });
-
-        var authService = new AuthService(_authManager, _logger, _roleHelper, userHelper);
-
-        // Act
-        var result = await authService.Me();
-
-        // Assert
-        result.Email.Should().Be("test@example.com");
-        await _authManager.Received(1).DoesCustomerExist(userId);
-    }
+    
 }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -9,8 +7,9 @@ using RestaurantManagement.Models;
 using RestaurantManagement.Repository;
 using RestaurantManagement.Services;
 using RestaurantManagement.Test.Unit;
-using Xunit;
 
+
+namespace RestaurantManagement.Test.Unit;
 public class MenuServiceTests
 {
     private readonly ILogger<MenuService> _logger;

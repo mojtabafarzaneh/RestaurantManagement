@@ -6,10 +6,9 @@ A robust Restaurant Management System built with **.NET Core** following **DDD (
 
 - **Order Management**: Customers can view the menu, place orders, and track their order statuses.
 - **Ticketing System**: Automatically generates tickets when an order is placed. If a ticket is delayed, the system changes the ticket's status using RabbitMQ.
-- **Delivery Service**: Customers can choose delivery options with estimated delivery times.
 - **Role-based Authorization**: Secure access to specific routes based on user roles, including customers, chefs, and managers.
 - **RabbitMQ Integration**: Used for monitoring ticket delays and notifying the system to update ticket status.
-- **ACID-Compliant Queries**: All database operations are designed to follow ACID principles ensuring data integrity.
+- **ACID-Compliant Queries**: All database operations are designed to follow ACID principles ensuring data integrity and atomicity.
 - **DDD Principles**: The project follows Domain-Driven Design (DDD) with services and repositories to manage business logic and persistence.
 - **Fully Unit Tested Services**: All service layer methods are fully unit tested to ensure correctness and reliability.
 

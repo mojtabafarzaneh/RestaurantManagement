@@ -22,6 +22,7 @@ A robust Restaurant Management System built with **.NET Core** following **DDD (
 - **SQL Server**: Used as the database for storing data related to orders, tickets, menu items, and user information.
 - **Swagger**: API documentation for testing and exploration.
 
+
 ## Installation
 
 Follow these steps to set up the project locally:
@@ -31,3 +32,16 @@ Follow these steps to set up the project locally:
 ```bash
 git clone https://github.com/mojtabafarzaneh/RestaurantManagement.git
 ```
+
+### 2. Install and Run Docker container
+
+#### SQLServer
+```bash
+docker run -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=yourStrong(!)Password' -p 1433:1433 --name sqlserver-container -d mcr.microsoft.com/mssql/server
+```
+#### RabbitMQ
+```bash
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
+```
+
+

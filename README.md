@@ -27,21 +27,50 @@ A robust Restaurant Management System built with **.NET Core** following **DDD (
 
 Follow these steps to set up the project locally:
 
-### 1. Clone the repository
+### Clone the repository
 
 ```bash
 git clone https://github.com/mojtabafarzaneh/RestaurantManagement.git
 ```
+#### Navigate to the project directory
+```bash
+cd RestaurantManagement
+```
+#### Build The Project
+```bash
+dotnet build
+```
 
-### 2. Install and Run Docker container
+### Install and Run Docker containers
 
 #### SQLServer
 ```bash
 docker run -e 'ACCEPT_EULA=Y' -e 'MSSQL_SA_PASSWORD=yourStrong(!)Password' -p 1433:1433 --name sqlserver-container -d mcr.microsoft.com/mssql/server
 ```
+
 #### RabbitMQ
 ```bash
 docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
 ```
+
+### Modify the connection string in appsettings.json to point to this local SQL Server instance:
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=localhost,1433;Database=RestaurantDB;User Id=sa;Password=yourStrong(!)Password;"
+}
+```
+### Write the needed sconnection strings to your RabbitMQ container:
+```json
+"RabbitMQ": {
+    "HostName": "localhost",
+    "UserName": "guest",
+    "Password": "guest",
+    "QueueName": "ticketQueue",
+    "Exchange": "ticketExchange",
+    "RoutingKey": "ticket.routingKey"
+
+  }
+```
+
 
 

@@ -1,6 +1,6 @@
 # Restaurant Management API
 
-A robust Restaurant Management System built with **.NET Core** following **DDD (Domain-Driven Design)** principles. This API handles various restaurant operations such as order management, ticketing, menu management, and customer feedback. It integrates **JWT Authentication**, **Entity Framework (EF)**, and **RabbitMQ** for messaging and ticket status updates.
+A robust Restaurant Management System built with **.NET Core** following **DDD (Domain-Driven Design)** principles. This API handles various restaurant operations such as order management, ticketing and menu management. It integrates **JWT Authentication**, **Entity Framework (EF)**, and **RabbitMQ** for messaging and ticket status updates.
 
 ## Features
 

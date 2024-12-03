@@ -58,7 +58,7 @@ docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
   "DefaultConnection": "Server=localhost,1433;Database=RestaurantDB;User Id=sa;Password=yourStrong(!)Password;"
 }
 ```
-### Write the needed sconnection strings to your RabbitMQ container:
+### Write the needed connection strings to your RabbitMQ container:
 ```json
 "RabbitMQ": {
     "HostName": "localhost",

@@ -1,9 +1,9 @@
-using System.Collections;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using AutoMapper;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RestaurantManagement.Contracts.Requests;
 using RestaurantManagement.Contracts.Responses;
@@ -44,16 +44,24 @@ public class AuthManager: IAuthManager
         return result.Errors;
     }
 
-    public async Task<AuthCustomerResponse> Login(LoginRequest request)
+    public async Task<Customer> DoesCustomerExist(string email)
     {
-        bool isValid = false;
-        _customer = await _userManager.FindByEmailAsync(request.Email);
-        isValid = await _userManager.CheckPasswordAsync(_customer, request.Password);
-        if (_customer is null || !isValid)
+        var result = await _userManager.FindByEmailAsync(email);
+        if (result == null)
         {
-            return null;
+            return null!;
         }
 
+        return result;
+    }
+
+    public async Task<bool> IsPasswordValid(Customer customer, string password)
+    {
+        return await _userManager.CheckPasswordAsync(customer, password);
+    }
+
+    public async Task<AuthCustomerResponse> Login(LoginRequest request)
+    {
         var token = await GenerateJwtToken();
         return new AuthCustomerResponse
         {
@@ -65,7 +73,7 @@ public class AuthManager: IAuthManager
 
     private async Task<string> GenerateJwtToken()
     {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? string.Empty));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
         
         var roles = await _userManager.GetRolesAsync(_customer);
@@ -105,26 +113,16 @@ public class AuthManager: IAuthManager
         return newRefreshToken;
     }
 
+    public async Task<bool> DoesTokenExist(AuthCustomerResponse request, Customer customer)
+    {
+        return await  _userManager.VerifyUserTokenAsync(
+            customer, "RestaurantManagementApi", 
+            "RefreshToken", request.RefreshToken);
+    }
+    
+
     public async Task<AuthCustomerResponse> VerifyRefreshToken(AuthCustomerResponse request)
     {
-        var JwtSecurityTokenHandler = new JwtSecurityTokenHandler();
-        var tokenContent = JwtSecurityTokenHandler.ReadJwtToken(request.Token);
-        var email = tokenContent.Claims.ToList()
-            .FirstOrDefault(x => x.Type == "email")?.Value;
-        _customer = await _userManager.FindByEmailAsync(email);
-
-        if (_customer is null)
-        {
-            return null;
-        }
-        var isValidRefreshToken = await  _userManager.VerifyUserTokenAsync(
-            _customer, "RestaurantManagementApi", 
-            "RefreshToken", request.RefreshToken);
-        if (!isValidRefreshToken)
-        {
-            await _userManager.UpdateSecurityStampAsync(_customer);
-            return null;
-        }
         var token = await GenerateJwtToken();
         return new AuthCustomerResponse
         {
@@ -134,69 +132,72 @@ public class AuthManager: IAuthManager
         };
     }
 
-    public async Task ChangeCustomerRole(ChangeUserRoleRequest request)
+    public async Task<Customer?> DoesCustomerExist(Guid id)
     {
-        var authorizedUser = _roleHelper.IsAdminUser();
-        if (!authorizedUser)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        var customer = await _userManager.Users.FirstOrDefaultAsync(x => x.Id == id);
 
-        var customer = await _userManager.FindByIdAsync(request.Id);
-        if (customer is null)
+        if (customer == null)
         {
-            throw new System.Exception("User not found");
+            return null;
         }
+        return customer;
 
-        if (!await _roleManager.RoleExistsAsync(request.Role))
-        {
-            throw new System.Exception("Role does not exist");
-        }
+    }
+
+    public async Task<bool> DoesRoleExist(string role)
+    {
+        return await _roleManager.RoleExistsAsync(role);
+    }
+
+    public async Task<IList<string>?> GetCustomerRoles(Customer customer, string role )
+    {
         var currentRole = await _userManager.GetRolesAsync(customer);
-        if (currentRole is null ||
-            !currentRole.Contains(request.Role)||
+        if (!currentRole.Contains(role) ||
             currentRole.Contains("Admin") ||
-            currentRole.Contains("Chef")|| 
+            currentRole.Contains("Chef") ||
             currentRole.Contains("Manager"))
         {
-            throw new System.Exception("You are not Allowed to change the role of this user");
+            return null;
         }
-        var removeResult = await _userManager.RemoveFromRolesAsync(customer, currentRole);
-        if (!removeResult.Succeeded)
+        return currentRole;
+    }
+
+    public async Task RemoveCurrentRole(Customer customer, IEnumerable<string> role)
+    {
+        try
         {
-            throw new System.Exception($"Failed to remove roles: {string.Join(", ", removeResult.Errors.Select(e => e.Description))}");
+            var removeResult = await _userManager.RemoveFromRolesAsync(customer, role);
+            if (!removeResult.Succeeded)
+            {
+                throw new Exception(
+                    $"Failed to remove roles: " +
+                    $"{string.Join(", ", removeResult.Errors.Select(e => e.Description))}");
+            }
 
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            throw;
+        }
+        
+    }
+
+    public async Task ChangeCustomerRole(ChangeUserRoleRequest request, Customer customer)
+    {
 
         var addResult = await _userManager.AddToRoleAsync(customer, request.Role);
         if (!addResult.Succeeded)
         {
-            throw new System.Exception("Failed to add users new role");
+            throw new ArgumentException("Failed to add users new role");
         }
     }
 
-    public async Task<CustomerResponse> Me()
+    public async Task<CustomerResponse> Me(Customer customer)
     {
-        var bearerResult = _userHelper.UserId();
-        if (bearerResult is null)
-        {
-            throw new UnauthorizedAccessException();
-        }
+        var resultCustomer = _mapper.Map<CustomerResponse>(customer);
 
-        var customerResult = _userManager.FindByIdAsync(bearerResult);
-        if (customerResult is null)
-        {
-            throw new System.Exception("User not found");
-        }
-
-        return new CustomerResponse
-        {
-            Id = customerResult.Result.Id,
-            FirstName = customerResult.Result.FirstName,
-            LastName = customerResult.Result.LastName,
-            Address = customerResult.Result.Address,
-            Email = customerResult.Result.Email
-        };
+        return resultCustomer;
 
     }
 }
